@@ -131,6 +131,11 @@ section{display:flex;flex-direction:column;gap:12px}
 .stopcard{width:100%;text-align:left;background:var(--bad-soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .stopcard .target{color:var(--fg)}
 .said{margin:0;padding-left:18px;font-size:14px}
+.stopcard.help{background:var(--green-soft)}
+.stopcard .en{font-size:13px;color:var(--muted);font-style:italic}
+.altlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.altlist li{display:flex;gap:8px;align-items:baseline;font-family:var(--display);font-size:1.02rem}
+.btn.idk{background:transparent;border-style:dashed;color:var(--muted);font-size:14px;padding:8px 12px}
 
 /* Phrasebook */
 .book{display:flex;flex-direction:column;gap:14px}
@@ -544,7 +549,7 @@ let scene=null, steps=[], idx=0, tries=0, attempts=0, firstTry=0, running=false,
 
 function start(s){
   stopAll();
-  scene=s;steps=s.build();idx=0;tries=0;attempts=0;firstTry=0;running=false;silences=0;triesLog=[];introduced=-1;
+  helped=false;scene=s;steps=s.build();idx=0;tries=0;attempts=0;firstTry=0;running=false;silences=0;triesLog=[];introduced=-1;
   $("home").hidden=true;$("play").hidden=false;
   $("pEyebrow").textContent=s.en+" · "+(s.reg==="tu"?"tu + vous":"vous");
   $("pTitle").textContent=s.fr;
@@ -589,7 +594,8 @@ function renderTalk(state,extra){
   else if(state==="paused"){big.textContent="Resume";status.textContent=extra||"Paused.";big.onclick=()=>{running=true;silences=0;listenTurn();};}
   else if(state==="typing"){big.textContent="↻";big.setAttribute("aria-label","Hear the line again");status.textContent="Your turn. Type or dictate your answer below.";big.onclick=()=>{if(st.say)say(st.say.fr);};}
   card.append(big,status);
-  if(state!=="ready"){goal.textContent="Goal: "+st.task;card.append(goal,triesDots());}
+  if(state!=="ready"){goal.textContent="Goal: "+st.task;card.append(goal,triesDots(),dontKnowBtn());
+    card.append(el("p","hint","Stuck? Tap “I don't know” or say «Je ne sais pas». It won't use a try."));}
   if(state==="typing"||(!micOK&&state!=="ready")){
     const form=el("form","answer");form.style.width="100%";
     const inp=el("input");inp.id="answerInput";inp.type="text";inp.lang="fr";inp.autocomplete="off";inp.setAttribute("autocapitalize","off");inp.setAttribute("aria-label","Your answer");
@@ -623,6 +629,7 @@ function listenTurn(){
 function pause(){running=false;stopListening();if("speechSynthesis" in window)speechSynthesis.cancel();renderTalk("paused","Paused. Tap Resume to answer.");}
 function handleAnswer(cands){
   const st=steps[idx];
+  if(bestOf(DONTKNOW,cands).score>=.85){addYou(cands[0],true);showHelp();return;}
   const rep=bestOf(REPEAT,cands);
   if(rep.score>=.85&&st.say){
     addYou(rep.heard,true);
@@ -634,8 +641,8 @@ function handleAnswer(cands){
   attempts++;silences=0;addYou(best.heard,pass);triesLog.push(best.heard);
   if(pass&&best.note)$("thread").append(el("div","tipnote","💡 "+esc(best.note)));
   if(pass){
-    if(tries===0)firstTry++;
-    tries=0;triesLog=[];idx++;
+    if(tries===0&&!helped)firstTry++;
+    tries=0;triesLog=[];helped=false;idx++;
     if(idx>=steps.length){running=false;renderDone();return;}
     if(mode==="guided"){introduce(idx,true);renderGuided(feedbackEl(best,true));return;}
     if(!running&&micOK){renderTalk("ready");return;}
@@ -650,31 +657,47 @@ function handleAnswer(cands){
   const again="Pardon ?"+(st.say?" "+st.say.fr:"");
   say(again,.85,()=>{if(running)listenTurn();});
 }
-function stopCard(best){
-  const st=steps[idx];
-  const c=el("div","stopcard");
-  c.append(el("strong",null,"Let's stop here for a moment."));
-  c.append(el("p","hint",`After ${MAX_TRIES} tries I still couldn't match your answer. For “${esc(st.task.toLowerCase())}”, I was listening for:`));
+function stopCard(best,reason="tries"){
+  const st=steps[idx], help=reason==="help";
+  const c=el("div","stopcard"+(help?" help":""));
+  c.append(el("strong",null,help?"No problem. Here's what fits here.":"Let's stop here for a moment."));
+  c.append(el("p","hint",help?`For “${esc(st.task.toLowerCase())}”, you can say:`:`After ${MAX_TRIES} tries I still couldn't match your answer. For “${esc(st.task.toLowerCase())}”, I was listening for:`));
   c.append(el("div","target",esc(st.targets[0])));
   c.append(el("div","phon",esc(phon(st.targets[0]))));
-  if(st.targets.length>1)c.append(el("div","alts","These also work: "+altList(st)));
-  c.append(el("div","hint","What I heard:"));
-  c.append(el("ol","said",triesLog.map(t=>"<li><i>"+esc(t)+"</i></li>").join("")));
-  const ws=el("div","words");best.words.forEach((w,i)=>ws.append(el("span","w "+(best.hit[i]?"hit":"miss"),esc(w))));c.append(ws);
-  const tips=tipsFor(best);if(tips.length)c.append(el("ul","tips",tips.join("")));
+  c.append(el("div","en",esc(st.task)));
+  if(st.targets.length>1){
+    c.append(el("div","hint","Other answers that work:"));
+    const ul=el("ul","altlist");
+    st.targets.slice(1).forEach(a=>{const li=el("li");const b=el("button","say","▶");b.type="button";b.setAttribute("aria-label","Play "+a);b.onclick=()=>say(a);li.append(b,el("span",null,esc(a)));ul.append(li);});
+    c.append(ul);
+  }
+  c.append(el("p","hint","Polite words like «s'il vous plaît» and «merci» are optional but encouraged."));
+  if(triesLog.length){c.append(el("div","hint","What I heard:"));c.append(el("ol","said",triesLog.map(t=>"<li><i>"+esc(t)+"</i></li>").join("")));}
+  if(best){const ws=el("div","words");best.words.forEach((w,i)=>ws.append(el("span","w "+(best.hit[i]?"hit":"miss"),esc(w))));c.append(ws);
+    const tips=tipsFor(best);if(tips.length)c.append(el("ul","tips",tips.join("")));}
   const row=el("div","row");
   const h=el("button","btn","▶ Hear it");h.onclick=()=>say(st.targets[0]);
   const s=el("button","btn","🐢 Slowly");s.onclick=()=>say(st.targets[0],.6);
-  const again=el("button","btn primary","Try this line again");again.onclick=()=>{tries=0;triesLog=[];if(mode==="guided")renderGuided();else{running=true;playStep();}};
+  const again=el("button","btn primary",help?"Got it, let me try":"Try this line again");again.onclick=()=>{tries=0;triesLog=[];if(mode==="guided")renderGuided();else{running=true;micOK?listenTurn():renderTalk("typing");}};
   const re=el("button","btn","Restart scene");re.onclick=()=>start(scene);
   row.append(h,s,again,re);c.append(row);
   return c;
 }
-function showStop(best){
+function showStop(best,reason){
   renderProgress();const T=$("turn");T.innerHTML="";
-  const card=el("div","turn talk");card.append(stopCard(best));T.append(card);
+  const card=el("div","turn talk");card.append(stopCard(best,reason));T.append(card);
   T.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
+/* "I don't know": show the help card now, no try used. The line then doesn't count as a first-try success. */
+let helped=false;
+function showHelp(){
+  running=false;stopListening();if("speechSynthesis" in window)speechSynthesis.cancel();
+  helped=true;
+  if(mode==="guided"){renderGuided(stopCard(null,"help"));$("turn").scrollIntoView({behavior:"smooth",block:"nearest"});return;}
+  showStop(null,"help");
+}
+function dontKnowBtn(){const b=el("button","btn idk","🤔 I don't know");b.type="button";b.onclick=showHelp;return b;}
+const DONTKNOW=["Je ne sais pas.","Je sais pas.","Je ne sais pas quoi dire.","Aide-moi.","Aidez-moi.","Je ne connais pas."];
 function renderDone(){
   renderProgress();const T=$("turn");T.innerHTML="";
   const pct=Math.round(firstTry/steps.length*100);
@@ -719,7 +742,7 @@ function renderGuided(fb){
       onSilence:()=>{const h=$("gHint");if(h)h.textContent="I didn't hear anything. Tap Speak and try again.";},
       onBlocked:()=>{const h=$("gHint");if(h)h.textContent="The microphone is blocked in this view. Tap the box and use your keyboard's dictation mic (set to French).";const i=$("answerInput");if(i)i.focus();}});
   };
-  row.append(l1,l2,mic);card.append(row);
+  row.append(l1,l2,mic,dontKnowBtn());card.append(row);
   const form=el("form","answer");
   const inp=el("input");inp.id="answerInput";inp.type="text";inp.lang="fr";inp.autocomplete="off";inp.setAttribute("autocapitalize","off");inp.setAttribute("aria-label","Your answer");
   inp.placeholder="…or dictate here with your keyboard mic";
