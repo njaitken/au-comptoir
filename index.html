@@ -214,7 +214,8 @@ section{display:flex;flex-direction:column;gap:12px}
       <li><b>Bonjour comes first,</b> every time, before you ask for anything. After about 6 p.m. it becomes <i>bonsoir</i>.</li>
       <li><b>Vous with staff, tu with friends.</b> The scene with a friend shows the switch.</li>
       <li><b>Je voudrais…</b> (I'd like) is the safe, polite way to order. <i>Je vais prendre…</i> and just <i>un café, s'il vous plaît</i> are also normal, and all are accepted.</li>
-      <li><b>Un café</b> is a small espresso. <b>Un café crème</b> is coffee with steamed milk.</li>
+      <li><b>Un café</b> is a small espresso; <i>un espresso</i> and <i>un express</i> mean the same and are accepted. <b>Un café crème</b> (or just <i>un crème</i>) is coffee with steamed milk.</li>
+      <li><b>S'il vous plaît, merci, bonjour</b> are never required to pass a line, but leave them out and you'll get a gentle reminder. In France they really do change how people respond to you.</li>
       <li><b>The bill won't come on its own.</b> Ask: <i>l'addition, s'il vous plaît</i>.</li>
       <li><b>Small talk stays small.</b> Staff may ask where you're from or comment on the weather; short, friendly answers are perfect. Brief replies from them aren't rude, especially in big cities. Skip money and politics.</li>
       <li><b>Didn't catch it?</b> Say <i>Pardon ?</i> or <i>Vous pouvez répéter, s'il vous plaît ?</i> In the scenes this replays the line slowly and never costs a try. Don't over-apologize for your French.</li>
@@ -436,6 +437,8 @@ function norm(s){
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
     .replace(/[’`´]/g,"'").replace(/\bs\s*'?\s*il\b/g,"sil").replace(/\bc\s*'?\s*est\b/g,"cest")
     .replace(/\bsvp\b/g,"sil vous plait")
+    .replace(/\bcafes? (?:express|expresso|espresso)s?\b/g,"cafe").replace(/\b(?:express|expresso|espresso)(s?)\b/g,"cafe$1").replace(/\bpetit noir\b/g,"cafe")
+    .replace(/\bun creme\b/g,"un cafe creme").replace(/\bun chocolat(?! chaud)\b/g,"un chocolat chaud")
     .replace(/'/g," ").replace(/[^a-z0-9\s-]/g," ").replace(/-/g," ")
     .split(/\s+/).filter(w=>w&&!FILLERS.has(w));
 }
@@ -445,16 +448,33 @@ function lcs(t,s){const m=t.length,n=s.length,d=Array.from({length:m+1},()=>new 
   for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--)d[i][j]=t[i]===s[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
   const hit=new Array(m).fill(false);let i=0,j=0;while(i<m&&j<n){if(t[i]===s[j]){hit[i]=true;i++;j++;}else if(d[i+1][j]>=d[i][j+1])i++;else j++;}
   return {count:d[0][0],hit};}
-function scoreOne(target,said){const t=norm(target),s=norm(said);if(!s.length)return{score:0,hit:t.map(()=>false),words:t};
+function scoreTok(t,s){if(!s.length||!t.length)return{score:0,hit:t.map(()=>false),words:t};
   const {count,hit}=lcs(t,s);const a=t.join(" "),b=s.join(" ");
   return{score:.6*(count/Math.max(t.length,s.length))+.4*(1-lev(a,b)/Math.max(a.length,b.length)),hit,words:t};}
+function scoreOne(target,said){return scoreTok(norm(target),norm(said));}
+/* Politeness words: encouraged, never required. Removed together so a line still matches without them. */
+const POLITE=[["sil","vous","plait"],["merci","beaucoup"],["merci"],["madame"],["monsieur"],["bonjour"],["bonsoir"],["excusez","moi"]];
+function stripPolite(tok){const out=[],gone=[];for(let i=0;i<tok.length;){let m=null;for(const p of POLITE)if(p.every((w,k)=>tok[i+k]===w)){m=p;break;}
+  if(m){gone.push(m.join(" "));i+=m.length;}else{out.push(tok[i]);i++;}}return{out,gone};}
+const POLITE_FR={"sil vous plait":"s'il vous plaît","merci beaucoup":"merci beaucoup","merci":"merci","madame":"madame","monsieur":"monsieur","bonjour":"bonjour","bonsoir":"bonsoir","excusez moi":"excusez-moi"};
 function bestOf(list,cands){let best=null;for(const c of cands)for(const o of list){const r=scoreOne(o.t||o,c);r.option=o.t||o;r.note=o.note||null;r.heard=c;if(!best||r.score>best.score)best=r;}return best;}
 /* Full targets win when they pass; otherwise an understandable-but-off-register answer passes with a tip. */
 function grade(step,cands){
   const main=bestOf(step.targets,cands);
-  if(main.score>=level||!step.soft||!step.soft.length)return main;
-  const soft=bestOf(step.soft,cands);
-  return soft.score>=level?soft:main;
+  if(main.score>=level)return main;
+  if(step.soft&&step.soft.length){const soft=bestOf(step.soft,cands);if(soft.score>=level)return soft;}
+  // Same line without the polite words: still understood, with a nudge to add them back
+  let best=null;
+  for(const c of cands){const s=stripPolite(norm(c));
+    for(const o of step.targets){const t=stripPolite(norm(o));if(!t.out.length)continue;
+      const r=scoreTok(t.out,s.out);
+      if(!best||r.score>best.score){const missing=t.gone.filter(g=>!s.gone.includes(g));best={...r,heard:c,option:o,missing};}}}
+  if(best&&best.score>=level){
+    const full=scoreOne(best.option,best.heard);best.hit=full.hit;best.words=full.words;
+    best.note=best.missing.length?`Understood! Tip: add «${best.missing.map(m=>POLITE_FR[m]).join("» and «")}». It isn't required, but in France it makes a real difference, especially when ordering.`:null;
+    return best;
+  }
+  return main;
 }
 function altList(st){const rest=st.targets.slice(1),shown=rest.slice(0,4).map(a=>"<b>"+esc(a)+"</b>").join(" · ");return rest.length>4?shown+` · and ${rest.length-4} more`:shown;}
 function phon(t){return norm(t).map(w=>PH[w]||w).join(" · ");}
