@@ -31,6 +31,13 @@
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:20px 48px}
 .wrap{max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
 header{display:flex;flex-direction:column;gap:6px}
+.live{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;background:var(--green);color:var(--surface);text-decoration:none}
+.live:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.live-k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.live-u{font-family:var(--display);font-size:1.15rem;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.live-n{font-size:13px;opacity:.85}
+.convo{margin-top:-14px;font-size:14px;color:var(--green);text-decoration:underline;text-underline-offset:3px;align-self:flex-start}
+.convo:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
 .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
 h1{font-family:var(--display);font-weight:400;font-size:2.2rem;line-height:1.1;margin:0;color:var(--green);text-wrap:balance}
 h2{font-family:var(--display);font-weight:400;font-size:1.4rem;margin:0;color:var(--green);text-wrap:balance}
@@ -74,6 +81,7 @@ section{display:flex;flex-direction:column;gap:12px}
 .msg .who{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center;justify-content:space-between}
 .msg .fr{font-family:var(--display);font-size:1.15rem;line-height:1.3}
 .msg .en{font-size:13px;color:var(--muted);font-style:italic}
+.tipnote{align-self:flex-end;max-width:88%;font-size:13px;color:var(--brass);background:var(--brass-soft);border-radius:10px;padding:6px 10px}
 .scene{font-size:14px;color:var(--muted);border-left:3px solid var(--brass);padding:2px 0 2px 12px}
 .mini{border:0;background:transparent;color:var(--green);font:inherit;font-size:12px;cursor:pointer;padding:0}
 .turn{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
@@ -258,14 +266,33 @@ const PRICES=[L("deux euros","€2"),L("trois euros","€3"),L("quatre euros","�
 const orders=it=>[`Je voudrais ${it}, s'il vous plaît.`,`${cap(it)}, s'il vous plaît.`,`Je vais prendre ${it}, s'il vous plaît.`,`Je prends ${it}, s'il vous plaît.`];
 const ASK_ORDER=[L("Qu'est-ce que je vous sers ?","What can I get you?"),L("Vous désirez ?","What would you like?")];
 
+/* How-are-you answers. Core = fine with anyone. Casual = friends. */
+const HOW_CORE=["Très bien, merci","Ça va bien, merci","Ça va, merci","Bien, merci","Très bien","Ça va","Ça va bien","Oui, ça va","Oui, très bien","Pas mal","Super","Tout va bien","Je vais bien, merci","Ça va très bien, merci"];
+const HOW_CASUAL=["Ouais, ça va","Nickel","Tranquille","Ça roule","Comme d'hab","Impeccable"];
+const withBack=(list,p)=>list.map(a=>`${a}. Et ${p} ?`);
+const NOTE_TOI="Understood! Small tip: «et toi» is for friends. With a server or shop staff, «et vous» sounds more polite.";
+const NOTE_VOUS="Understood! With a friend, «et toi» is more natural. «Et vous» sounds a bit formal.";
+const NOTE_SLANG="Understood! «Nickel», «tranquille» and «ça roule» are friend slang. With staff, «très bien» or «ça va» fits better.";
+const NOTE_ASKBACK="Understood! Next time, ask back too: add «et vous ?» (or «et toi ?» with a friend).";
+const NOTE_SALUT="Understood! «Salut» and «coucou» are for friends. With staff, start with «bonjour».";
+const NOTE_BONJOUR="Understood! With a friend, «salut» or «coucou» is more natural, but «bonjour» is fine.";
+function howVous(){return{targets:withBack(HOW_CORE,"vous"),soft:[
+  ...withBack(HOW_CORE,"toi").map(t=>({t,note:NOTE_TOI})),
+  ...withBack(HOW_CASUAL,"vous").concat(withBack(HOW_CASUAL,"toi")).map(t=>({t,note:NOTE_SLANG})),
+  ...HOW_CORE.map(t=>({t:t+".",note:NOTE_ASKBACK}))]};}
+function howTu(){const all=HOW_CORE.concat(HOW_CASUAL);return{targets:withBack(all,"toi"),soft:[
+  ...withBack(all,"vous").map(t=>({t,note:NOTE_VOUS})),
+  ...all.map(t=>({t:t+".",note:NOTE_ASKBACK}))]};}
+
 /* The opener every vous-scene shares: hello, how are you, what can I get you */
 function opener(who,g="Bonjour"){
   const hi=g==="Bonjour"?"Hello":"Good evening";
   const how=pick([L("Comment allez-vous ?","How are you?"),L("Vous allez bien ?","Are you well?"),L("Ça va ?","How are you?")]);
   const ask=pick(ASK_ORDER);
   return [
-    {who,say:L(`${g} !`,`${hi}!`),task:"Say hello back",targets:[`${g} !`,`${g}, madame !`,`${g}, monsieur !`]},
-    {who,say:how,task:"Say you're good, and ask how they are",targets:["Très bien, merci. Et vous ?","Ça va bien, merci. Et vous ?","Bien, merci. Et vous ?","Ça va, merci. Et vous ?","Très bien, et vous ?"]},
+    {who,say:L(`${g} !`,`${hi}!`),task:"Say hello back",targets:[`${g} !`,`${g}, madame !`,`${g}, monsieur !`,`${g} à vous !`],
+     soft:["Salut !","Coucou !"].map(t=>({t,note:NOTE_SALUT}))},
+    {who,say:how,task:"Say you're good, and ask how they are",...howVous()},
     {who,say:L(`Très bien, merci. ${ask.fr}`,`Very well, thanks. ${ask.en}`),order:true},
   ];
 }
@@ -342,8 +369,9 @@ const SCENES=[
   build(){
     const F="Léa", W="Le serveur", d=pick(DRINKS);
     return [
-      {scene:"You meet your friend Léa at a café.",who:F,say:pick([L("Salut !","Hi!"),L("Coucou !","Hey!")]),task:"Say hi back",targets:["Salut !","Coucou !","Salut, Léa !"]},
-      {who:F,say:pick([L("Ça va ?","How are you?"),L("Comment ça va ?","How's it going?")]),task:"Say you're good, and ask her back (use toi)",targets:["Ça va, et toi ?","Ça va bien, et toi ?","Très bien, merci. Et toi ?","Bien, et toi ?"]},
+      {scene:"You meet your friend Léa at a café.",who:F,say:pick([L("Salut !","Hi!"),L("Coucou !","Hey!")]),task:"Say hi back",targets:["Salut !","Coucou !","Salut, Léa !","Coucou, Léa !","Salut, ça va ?"],
+       soft:["Bonjour !","Bonjour, Léa !"].map(t=>({t,note:NOTE_BONJOUR}))},
+      {who:F,say:pick([L("Ça va ?","How are you?"),L("Comment ça va ?","How's it going?"),L("Ça va bien ?","Doing well?")]),task:"Say you're good, and ask her back",...howTu()},
       {who:F,say:L("Ça va bien, merci. Tu prends quoi ?","Good, thanks. What are you having?"),task:`Say you're having ${d.en}`,targets:[`Je prends ${d.fr}.`,`${cap(d.fr)}.`,`Je vais prendre ${d.fr}.`,`Je voudrais ${d.fr}.`]},
       {who:W,say:L("Bonjour ! Qu'est-ce que je vous sers ?","Hello! What can I get you?"),task:`Switch to vous: say hello and order an espresso and ${d.en}`,
        targets:[`Bonjour ! Un café et ${d.fr}, s'il vous plaît.`,`Bonjour, un café et ${d.fr}, s'il vous plaît.`,`Bonjour, je voudrais un café et ${d.fr}, s'il vous plaît.`]},
@@ -355,7 +383,7 @@ const SCENES=[
 /* ---------- phrasebook ---------- */
 const BOOK=[
   {h:"Hello",items:[["Bonjour","Hello. Say it first, every time.","any"],["Bonsoir","Good evening, from about 6 p.m.","any"],["Bonjour madame / monsieur","A little more polite.","vous"],["Salut","Hi, with friends.","tu"],["Coucou","Hey, with close friends.","tu"]]},
-  {h:"How are you?",items:[["Comment allez-vous ?","How are you? Polite.","vous"],["Vous allez bien ?","Are you well? Polite.","vous"],["Ça va ?","How's it going? Works almost anywhere.","any"],["Très bien, merci. Et vous ?","Very well, thanks. And you?","vous"],["Ça va bien, et toi ?","Good, and you?","tu"]]},
+  {h:"How are you?",items:[["Comment allez-vous ?","How are you? Polite.","vous"],["Vous allez bien ?","Are you well? Polite.","vous"],["Ça va ?","How's it going? Works almost anywhere.","any"],["Très bien, merci. Et vous ?","Very well, thanks. And you?","vous"],["Ça va bien, et toi ?","Good, and you?","tu"],["Pas mal, et vous ?","Not bad, and you?","any"],["Super !","Great!","any"],["Tranquille, et toi ?","Chill, you? Friends only.","tu"],["Nickel !","Perfect! Friends only.","tu"],["Ça roule !","All good! Friends only.","tu"]]},
   {h:"What the server asks",items:[["Qu'est-ce que je vous sers ?","What can I get you?","vous"],["Vous désirez ?","What would you like?","vous"],["Et avec ceci ?","Anything else with that?","vous"],["C'est tout ?","Is that all?","any"],["Sur place ou à emporter ?","For here or to go?","vous"],["Vous êtes combien ?","How many of you?","vous"]]},
   {h:"Ordering",items:[["Je voudrais un café, s'il vous plaît.","I'd like a coffee, please. The safe choice.","vous"],["Un café, s'il vous plaît.","A coffee, please. Short and normal.","any"],["Je vais prendre un thé.","I'll have a tea.","any"],["Oui, c'est tout, merci.","Yes, that's all, thanks.","any"]]},
   {h:"Paying and goodbye",items:[["L'addition, s'il vous plaît.","The bill, please.","vous"],["Je peux payer par carte ?","Can I pay by card?","vous"],["Voilà.","Here you go.","any"],["Merci, au revoir !","Thanks, goodbye!","any"],["Bonne journée !","Have a good day!","any"],["Bonne soirée !","Have a good evening!","any"]]},
@@ -383,7 +411,15 @@ function lcs(t,s){const m=t.length,n=s.length,d=Array.from({length:m+1},()=>new 
 function scoreOne(target,said){const t=norm(target),s=norm(said);if(!s.length)return{score:0,hit:t.map(()=>false),words:t};
   const {count,hit}=lcs(t,s);const a=t.join(" "),b=s.join(" ");
   return{score:.6*(count/Math.max(t.length,s.length))+.4*(1-lev(a,b)/Math.max(a.length,b.length)),hit,words:t};}
-function grade(step,cands){let best=null,heard=cands[0];for(const c of cands)for(const o of step.targets){const r=scoreOne(o,c);r.option=o;if(!best||r.score>best.score){best=r;heard=c;}}best.heard=heard;return best;}
+function bestOf(list,cands){let best=null;for(const c of cands)for(const o of list){const r=scoreOne(o.t||o,c);r.option=o.t||o;r.note=o.note||null;r.heard=c;if(!best||r.score>best.score)best=r;}return best;}
+/* Full targets win when they pass; otherwise an understandable-but-off-register answer passes with a tip. */
+function grade(step,cands){
+  const main=bestOf(step.targets,cands);
+  if(main.score>=level||!step.soft||!step.soft.length)return main;
+  const soft=bestOf(step.soft,cands);
+  return soft.score>=level?soft:main;
+}
+function altList(st){const rest=st.targets.slice(1),shown=rest.slice(0,4).map(a=>"<b>"+esc(a)+"</b>").join(" · ");return rest.length>4?shown+` · and ${rest.length-4} more`:shown;}
 function phon(t){return norm(t).map(w=>PH[w]||w).join(" · ");}
 function tipsFor(best){const missed=[...new Set(best.words.filter((w,i)=>!best.hit[i]))];return missed.map(w=>TIPS[w]?`<li><b>${esc(w)}</b>: ${esc(TIPS[w])}</li>`:"").filter(Boolean).slice(0,4);}
 
@@ -531,6 +567,7 @@ function pause(){running=false;stopListening();if("speechSynthesis" in window)sp
 function handleAnswer(cands){
   const st=steps[idx];const best=grade(st,cands);const pass=best.score>=level;
   attempts++;silences=0;addYou(best.heard,pass);triesLog.push(best.heard);
+  if(pass&&best.note)$("thread").append(el("div","tipnote","💡 "+esc(best.note)));
   if(pass){
     if(tries===0)firstTry++;
     tries=0;triesLog=[];idx++;
@@ -555,7 +592,7 @@ function stopCard(best){
   c.append(el("p","hint",`After ${MAX_TRIES} tries I still couldn't match your answer. For “${esc(st.task.toLowerCase())}”, I was listening for:`));
   c.append(el("div","target",esc(st.targets[0])));
   c.append(el("div","phon",esc(phon(st.targets[0]))));
-  if(st.targets.length>1)c.append(el("div","alts","These also work: "+st.targets.slice(1).map(a=>"<b>"+esc(a)+"</b>").join(" · ")));
+  if(st.targets.length>1)c.append(el("div","alts","These also work: "+altList(st)));
   c.append(el("div","hint","What I heard:"));
   c.append(el("ol","said",triesLog.map(t=>"<li><i>"+esc(t)+"</i></li>").join("")));
   const ws=el("div","words");best.words.forEach((w,i)=>ws.append(el("span","w "+(best.hit[i]?"hit":"miss"),esc(w))));c.append(ws);
@@ -603,7 +640,7 @@ function renderGuided(fb){
   const card=el("div","turn");
   const cue=el("div","cue");cue.append(el("span","eyebrow",`Your line · ${idx+1} of ${steps.length}`),el("span","task",esc(st.task)));card.append(cue);
   card.append(el("div","target",esc(model)),el("div","phon",esc(phon(model))));
-  if(st.targets.length>1)card.append(el("div","alts","Also accepted: "+st.targets.slice(1).map(a=>"<b>"+esc(a)+"</b>").join(" · ")));
+  if(st.targets.length>1)card.append(el("div","alts","Also accepted: "+altList(st)));
   card.append(triesDots());
   const row=el("div","row");
   const l1=el("button","btn","▶ Listen");l1.onclick=()=>say(model);
