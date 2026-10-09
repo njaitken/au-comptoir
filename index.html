@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>Au Comptoir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column like a café ticket. Home = scene menu + phrasebook; Play = conversation thread with a talk panel (hands-free) or a guided card under it. */
+:root{
+  --bg:#eef0ee; --surface:#ffffff; --zinc:#dfe3e1; --fg:#1d2522; --muted:#5b6762;
+  --green:#1f5a44; --green-soft:#e1ece6; --brass:#a8741a; --brass-soft:#f5ead2;
+  --ok:#227a4c; --ok-soft:#dff1e6; --bad:#b23a2e; --bad-soft:#f8e1dd; --line:#c9d0cc;
+  --display:"Young Serif",Georgia,"Times New Roman",serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"DM Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1b2420; --zinc:#26312c; --fg:#e7ece9; --muted:#9aa8a1;
+  --green:#7cc3a2; --green-soft:#1f3a2f; --brass:#e0ad55; --brass-soft:#3a2f1a;
+  --ok:#6fd39c; --ok-soft:#183a28; --bad:#f08a7c; --bad-soft:#3d1f1b; --line:#33403a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1b2420; --zinc:#26312c; --fg:#e7ece9; --muted:#9aa8a1;
+  --green:#7cc3a2; --green-soft:#1f3a2f; --brass:#e0ad55; --brass-soft:#3a2f1a;
+  --ok:#6fd39c; --ok-soft:#183a28; --bad:#f08a7c; --bad-soft:#3d1f1b; --line:#33403a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
+h1{font-family:var(--display);font-weight:400;font-size:2.2rem;line-height:1.1;margin:0;color:var(--green);text-wrap:balance}
+h2{font-family:var(--display);font-weight:400;font-size:1.4rem;margin:0;color:var(--green);text-wrap:balance}
+h3{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:0;font-weight:500}
+.lede{color:var(--muted);margin:0;max-width:62ch}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--green);color:var(--surface)}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--green);color:var(--green);font-weight:700}
+section{display:flex;flex-direction:column;gap:12px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+
+/* Scene menu */
+.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.sc{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sc:hover{border-color:var(--green)}
+.sc:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.sc .fr{font-family:var(--display);font-size:1.2rem;color:var(--fg)}
+.sc .en{font-size:14px;color:var(--muted)}
+.sc .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:var(--zinc);color:var(--muted)}
+.tag.tu{background:var(--brass-soft);color:var(--brass)}
+.tag.best{background:var(--green-soft);color:var(--green)}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.flow ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.flow i{font-family:var(--display);font-style:normal}
+
+/* Play */
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.progress{display:flex;gap:4px}
+.progress span{flex:1;height:5px;border-radius:3px;background:var(--zinc)}
+.progress span.done{background:var(--green)}
+.progress span.now{background:var(--brass)}
+.thread{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 14px;border-radius:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.msg.npc{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.you{align-self:flex-end;background:var(--green-soft);border-bottom-right-radius:4px}
+.msg.you.fail{background:var(--bad-soft)}
+.msg .who{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center;justify-content:space-between}
+.msg .fr{font-family:var(--display);font-size:1.15rem;line-height:1.3}
+.msg .en{font-size:13px;color:var(--muted);font-style:italic}
+.scene{font-size:14px;color:var(--muted);border-left:3px solid var(--brass);padding:2px 0 2px 12px}
+.mini{border:0;background:transparent;color:var(--green);font:inherit;font-size:12px;cursor:pointer;padding:0}
+.turn{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.cue{display:flex;flex-direction:column;gap:2px}
+.cue .task{font-weight:700;font-size:1.05rem}
+.target{font-family:var(--display);font-size:1.5rem;line-height:1.25}
+.target.hidden{color:transparent;text-shadow:0 0 10px var(--muted);user-select:none}
+.phon{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.alts{font-size:13px;color:var(--muted)}
+.alts b{color:var(--fg);font-weight:400;font-family:var(--display)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:inherit;font-size:15px;border-radius:10px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg);display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:var(--green);color:var(--surface);border-color:var(--green);font-weight:700}
+.btn.rec{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible,input:focus-visible,.mini:focus-visible,.say:focus-visible,.big:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.answer{display:flex;gap:8px}
+.answer input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.feedback{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.feedback.ok{background:var(--ok-soft)}
+.feedback.bad{background:var(--bad-soft)}
+.verdict{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.verdict strong{font-family:var(--display);font-weight:400;font-size:1.25rem}
+.feedback.ok .verdict strong{color:var(--ok)}
+.feedback.bad .verdict strong{color:var(--bad)}
+.score{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.words{display:flex;flex-wrap:wrap;gap:4px}
+.w{font-family:var(--display);padding:1px 6px;border-radius:5px}
+.w.hit{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+.w.miss{background:var(--bad-soft);color:var(--bad);border:1px dashed var(--bad)}
+.tips{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.tips b{font-family:var(--display);font-weight:400}
+.done-card{text-align:center;align-items:center}
+.stat{font-family:var(--display);font-size:2.4rem;color:var(--green);line-height:1;font-variant-numeric:tabular-nums}
+
+/* Hands-free talk panel */
+.talk{align-items:center;text-align:center}
+.big{all:unset;cursor:pointer;width:96px;height:96px;border-radius:50%;background:var(--green);color:var(--surface);display:grid;place-items:center;font-weight:700;font-size:15px;box-shadow:0 0 0 0 var(--green-soft)}
+.big.listening{background:var(--bad);color:#fff;animation:pulse 1.4s ease-out infinite}
+.big.speaking{background:var(--brass)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--bad-soft)}100%{box-shadow:0 0 0 18px transparent}}
+@media (prefers-reduced-motion:reduce){.big.listening{animation:none}}
+.status{font-weight:700;font-size:1.05rem;min-height:1.5em}
+.goal{font-size:14px;color:var(--muted)}
+.tries{display:flex;gap:6px;justify-content:center;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tries i{width:10px;height:10px;border-radius:50%;background:var(--zinc);display:inline-block}
+.tries i.used{background:var(--bad)}
+.stopcard{width:100%;text-align:left;background:var(--bad-soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.stopcard .target{color:var(--fg)}
+.said{margin:0;padding-left:18px;font-size:14px}
+
+/* Phrasebook */
+.book{display:flex;flex-direction:column;gap:14px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.ph{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start}
+.say{all:unset;cursor:pointer;color:var(--green);font-size:14px;line-height:1.6;padding:0 2px}
+.ph .f{font-family:var(--display);font-size:1.05rem}
+.ph .n{grid-column:2;font-size:13px;color:var(--muted);margin-top:-2px}
+.register{font-family:var(--mono);font-size:10.5px;color:var(--brass);letter-spacing:.04em;margin-left:6px}
+.notes{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;max-width:62ch}
+.voice{background:var(--brass-soft);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.voice pre{white-space:pre-wrap;font-family:var(--mono);font-size:12.5px;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:180px;overflow:auto}
+.sources{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.sources a{color:var(--green)}
+@media (prefers-reduced-motion:no-preference){.msg{animation:in .25s ease-out}@keyframes in{from{transform:translateY(4px);opacity:.4}to{transform:none;opacity:1}}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Spoken French · Beginner · Cafés &amp; bakeries</div>
+    <h1>Au Comptoir</h1>
+    <p class="lede">Short, everyday café conversations. The server says hello, asks how you are, takes your order and says goodbye. You answer out loud in French. Each line gets three tries before it stops and shows you what it was listening for.</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Practice mode">
+      <button id="mTalk" aria-pressed="true">🎙 Conversation</button>
+      <button id="mGuide" aria-pressed="false">📖 Guided</button>
+    </div>
+    <div class="seg" role="group" aria-label="Strictness" id="strict">
+      <button data-lv="0.70" aria-pressed="false">Gentle</button>
+      <button data-lv="0.85" aria-pressed="true">Normal</button>
+      <button data-lv="0.95" aria-pressed="false">Strict</button>
+    </div>
+    <button class="chip" id="tEn" aria-pressed="true">English translations</button>
+  </div>
+  <p class="hint" id="modeHint"></p>
+
+  <main id="home">
+    <section>
+      <div class="bar"><h2>Choose a scene</h2><button class="btn primary" id="surprise">🎲 Surprise me</button></div>
+      <div class="menu" id="menu"></div>
+      <div class="flow">
+        <h3>Every scene follows the same basic shape</h3>
+        <ol>
+          <li>Hello: <i>Bonjour !</i> → <i>Bonjour !</i></li>
+          <li>How are you: <i>Comment allez-vous ?</i> → <i>Très bien, merci. Et vous ?</i></li>
+          <li>What can I get you: <i>Qu'est-ce que je vous sers ?</i> → <i>Je voudrais un café, s'il vous plaît.</i></li>
+          <li>One or two simple questions: for here or to go, anything else, how you're paying</li>
+          <li>Goodbye: <i>Merci, bonne journée !</i> → <i>Merci, au revoir !</i></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <main id="play" hidden>
+    <section>
+      <div class="bar">
+        <button class="btn" id="back">← Scenes</button>
+        <button class="btn" id="replay">↻ New variation</button>
+      </div>
+      <div>
+        <div class="eyebrow" id="pEyebrow"></div>
+        <h2 id="pTitle"></h2>
+      </div>
+      <div class="progress" id="progress" aria-hidden="true"></div>
+      <div class="thread" id="thread"></div>
+      <div id="turn"></div>
+    </section>
+  </main>
+
+  <section>
+    <h2>Phrasebook</h2>
+    <p class="hint">The basic lines used in the scenes, plus a few common alternatives. Tap ▶ to hear one.</p>
+    <div class="book" id="book"></div>
+  </section>
+
+  <section>
+    <h2>Good to know</h2>
+    <ul class="notes">
+      <li><b>Bonjour comes first,</b> every time, before you ask for anything. After about 6 p.m. it becomes <i>bonsoir</i>.</li>
+      <li><b>Vous with staff, tu with friends.</b> The scene with a friend shows the switch.</li>
+      <li><b>Je voudrais…</b> (I'd like) is the safe, polite way to order. <i>Je vais prendre…</i> and just <i>un café, s'il vous plaît</i> are also normal, and all are accepted.</li>
+      <li><b>Un café</b> is a small espresso. <b>Un café crème</b> is coffee with steamed milk.</li>
+      <li><b>The bill won't come on its own.</b> Ask: <i>l'addition, s'il vous plaît</i>.</li>
+      <li>In a busy Paris café the server may skip "how are you" and go straight to your order. The scenes keep it in so you practise it.</li>
+      <li>Films and TV are great for hearing real speed and slang, but their café scenes are usually too fast and too jokey for a first conversation. These scenes follow beginner course dialogues instead.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Practise live with Claude</h2>
+    <div class="voice">
+      <p class="hint">For an open conversation, copy this, start Claude's voice mode, and paste or read it out.</p>
+      <pre id="voicePrompt">Let's role-play a simple café visit in French for a beginner. You are the server and use "vous". Keep every line short and basic. Go in this order: say hello, ask how I am, ask what you can get me, ask one simple follow-up (for here or to go, or anything else), give me the price, and say goodbye. After each of my lines: if what I said isn't close to correct French for that moment, say "Pardon ?" and ask again. After three tries on the same line, tell me in English what you were expecting and how to pronounce it, then move on. At the end, list the words I struggled with.</pre>
+      <div class="row"><button class="btn" id="copyPrompt">Copy prompt</button><span class="hint" id="copyMsg" aria-live="polite"></span></div>
+    </div>
+    <p class="hint">How grading works: a French speech recognizer turns your voice into text, which is compared word by word with the expected line and its accepted variants. A low score means a French listener probably wouldn't catch it. It measures how understandable you are, not a lab-grade phonetic score. If the mic is blocked in this view, use your phone keyboard's dictation mic, set to French, in the answer box.</p>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <ul class="sources">
+      <li><a href="https://elon.io/grammar/french/texts/dialogue-cafe-a1" target="_blank" rel="noopener">elon.io: Dialogue au café (A1)</a></li>
+      <li><a href="https://cursa.app/en/page/examples-of-dialogues-in-french" target="_blank" rel="noopener">Cursa: examples of beginner dialogues in French</a></li>
+      <li><a href="https://cursa.app/en/page/food-ordering-and-simple-preferences" target="_blank" rel="noopener">Cursa: food, ordering and simple preferences</a></li>
+      <li><a href="https://natomasunified.org/content/uploads/sites/4/2015/10/fr1-3b.pdf" target="_blank" rel="noopener">Discovering French: Leçon 3B, Au café</a></li>
+      <li><a href="https://instruct.westvalley.edu/skaife/ch7_assign.html" target="_blank" rel="noopener">West Valley College: chapter 7 café exercises</a></li>
+      <li><a href="https://www.commeunefrancaise.com/blog/french-conversation-phrases" target="_blank" rel="noopener">Comme une Française: 6 spoken French situations</a></li>
+      <li><a href="https://www.thelocal.fr/20200813/what-does-how-you-order-a-coffee-in-french-say-about-you/" target="_blank" rel="noopener">The Local: how you order a coffee in French</a></li>
+      <li><a href="https://www.thelocal.fr/20240528/explained-restaurant-bill-etiquette-in-france" target="_blank" rel="noopener">The Local: bill etiquette in France</a></li>
+      <li><a href="https://lingopie.com/blog/french-greetings/" target="_blank" rel="noopener">Lingopie: French greetings</a></li>
+      <li><a href="https://blog.duolingo.com/how-to-pronounce-french" target="_blank" rel="noopener">Duolingo: how to pronounce French</a></li>
+      <li><a href="https://www.commeunefrancaise.com/blog/french-listening-practice-amelie" target="_blank" rel="noopener">Comme une Française: listening practice with Amélie</a></li>
+    </ul>
+  </section>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const L=(fr,en)=>({fr,en});
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const $=id=>document.getElementById(id);
+
+/* ---------- content pools ---------- */
+const DRINKS=[L("un café","an espresso"),L("un café crème","a coffee with milk"),L("un thé","a tea"),L("un chocolat chaud","a hot chocolate"),L("un jus d'orange","an orange juice")];
+const PASTRIES=[L("un croissant","a croissant"),L("un pain au chocolat","a pain au chocolat")];
+const BREADS=[L("une baguette","a baguette"),L("deux baguettes","two baguettes")];
+const PRICES=[L("deux euros","€2"),L("trois euros","€3"),L("quatre euros","€4"),L("cinq euros","€5")];
+const orders=it=>[`Je voudrais ${it}, s'il vous plaît.`,`${cap(it)}, s'il vous plaît.`,`Je vais prendre ${it}, s'il vous plaît.`,`Je prends ${it}, s'il vous plaît.`];
+const ASK_ORDER=[L("Qu'est-ce que je vous sers ?","What can I get you?"),L("Vous désirez ?","What would you like?")];
+
+/* The opener every vous-scene shares: hello, how are you, what can I get you */
+function opener(who,g="Bonjour"){
+  const hi=g==="Bonjour"?"Hello":"Good evening";
+  const how=pick([L("Comment allez-vous ?","How are you?"),L("Vous allez bien ?","Are you well?"),L("Ça va ?","How are you?")]);
+  const ask=pick(ASK_ORDER);
+  return [
+    {who,say:L(`${g} !`,`${hi}!`),task:"Say hello back",targets:[`${g} !`,`${g}, madame !`,`${g}, monsieur !`]},
+    {who,say:how,task:"Say you're good, and ask how they are",targets:["Très bien, merci. Et vous ?","Ça va bien, merci. Et vous ?","Bien, merci. Et vous ?","Ça va, merci. Et vous ?","Très bien, et vous ?"]},
+    {who,say:L(`Très bien, merci. ${ask.fr}`,`Very well, thanks. ${ask.en}`),order:true},
+  ];
+}
+const thanksBye=(day=true)=>({task:"Say thanks and goodbye",targets:day?["Merci, au revoir !","Merci, bonne journée !","Au revoir, bonne journée !","Merci, vous aussi. Au revoir !"]:["Merci, bonne soirée !","Merci, au revoir !","Au revoir, bonne soirée !","Merci, vous aussi. Au revoir !"]});
+
+/* ---------- scenes ---------- */
+const SCENES=[
+{ id:"cafe", fr:"Un café, s'il vous plaît", en:"Order a drink at the counter", reg:"vous", lvl:"Start here",
+  build(){
+    const who=pick(["Le serveur","La serveuse"]), d=pick(DRINKS), pr=pick(PRICES), here=Math.random()<.5;
+    const s=opener(who); Object.assign(s[2],{task:`Order ${d.en}`,targets:orders(d.fr)});
+    s[0].scene="You walk into a café and go up to the counter.";
+    return [...s,
+      {who,say:L("Sur place ou à emporter ?","For here or to go?"),task:here?"Say it's for here":"Say it's to go",
+       targets:here?["Sur place, s'il vous plaît.","Sur place, merci."]:["À emporter, s'il vous plaît.","À emporter, merci."]},
+      {who,say:L(`D'accord. Ça fait ${pr.fr}, s'il vous plaît.`,`OK. That's ${pr.en}, please.`),task:"Hand over the money: «Here you go.»",targets:["Voilà.","Voilà, merci.","Tenez, voilà."]},
+      {who,say:L("Merci ! Bonne journée !","Thank you! Have a good day!"),...thanksBye()},
+    ];
+  }},
+{ id:"croissant", fr:"Un café et un croissant", en:"A drink and something to eat", reg:"vous", lvl:"Add a second item",
+  build(){
+    const who=pick(["Le serveur","La serveuse"]), d=pick(DRINKS), p=pick(PASTRIES), pr=pick(PRICES);
+    const s=opener(who); Object.assign(s[2],{task:`Order ${d.en}`,targets:orders(d.fr)});
+    s[0].scene="Breakfast time. You go up to the counter of a small café.";
+    return [...s,
+      {who,say:pick([L("Et avec ceci ?","Anything else with that?"),L("Et pour manger ?","And to eat?")]),task:`Add ${p.en}`,
+       targets:[`${cap(p.fr)}, s'il vous plaît.`,`Et ${p.fr}, s'il vous plaît.`,`Je voudrais aussi ${p.fr}, s'il vous plaît.`,`Oui, ${p.fr}, s'il vous plaît.`]},
+      {who,say:L("C'est tout ?","Is that all?"),task:"Say yes, that's all, thank you",targets:["Oui, c'est tout, merci.","C'est tout, merci.","Oui, merci."]},
+      {who,say:L(`Très bien. Ça fait ${pr.fr}.`,`Very good. That's ${pr.en}.`),task:"Hand over the money: «Here you go.»",targets:["Voilà.","Voilà, merci.","Tenez, voilà."]},
+      {who,say:L("Merci ! Bonne journée !","Thank you! Have a good day!"),...thanksBye()},
+    ];
+  }},
+{ id:"boulangerie", fr:"À la boulangerie", en:"Buy bread, pay by card", reg:"vous", lvl:"Daily essential",
+  build(){
+    const who="La boulangère", b=pick(BREADS), p=pick(PASTRIES), pr=pick(PRICES);
+    const s=opener(who); Object.assign(s[2],{task:`Ask for ${b.en}`,targets:orders(b.fr)});
+    s[0].scene="It's your turn at the bakery.";
+    return [...s,
+      {who,say:L("Et avec ceci ?","Anything else with that?"),task:`Add ${p.en}`,
+       targets:[`${cap(p.fr)}, s'il vous plaît.`,`Et ${p.fr}, s'il vous plaît.`,`Je voudrais aussi ${p.fr}, s'il vous plaît.`]},
+      {who,say:L(`C'est tout ? Ça fait ${pr.fr}.`,`Is that all? That's ${pr.en}.`),task:"Ask if you can pay by card",
+       targets:["Je peux payer par carte ?","Est-ce que je peux payer par carte ?","Par carte, s'il vous plaît."]},
+      {who,say:L("Oui, bien sûr.","Yes, of course."),task:"Say thank you",targets:["Merci.","Merci beaucoup.","Merci, madame."]},
+      {who,say:L("Merci à vous. Bonne journée !","Thank you. Have a good day!"),...thanksBye()},
+    ];
+  }},
+{ id:"addition", fr:"L'addition, s'il vous plaît", en:"Sit at a table and ask for the bill", reg:"vous", lvl:"Table service",
+  build(){
+    const who=pick(["Le serveur","La serveuse"]), d=pick(DRINKS), pr=pick(PRICES);
+    const s=opener(who); Object.assign(s[2],{task:`Order ${d.en}`,targets:orders(d.fr)});
+    s[0].scene="You sit down at a table on the terrace. The server comes over.";
+    return [...s,
+      {who,say:L("Très bien, je vous apporte ça.","Very good, I'll bring that."),task:"Say thank you",targets:["Merci.","Merci beaucoup.","Merci bien."]},
+      {who,say:null,scene:"You've finished your drink. Catch the server's eye and raise a hand.",task:"Ask for the bill",
+       targets:["L'addition, s'il vous plaît.","S'il vous plaît, l'addition.","Excusez-moi, l'addition, s'il vous plaît."]},
+      {who,say:L(`Voilà. Ça fait ${pr.fr}.`,`Here you go. That's ${pr.en}.`),task:"Say you'll pay by card",
+       targets:["Par carte, s'il vous plaît.","Je peux payer par carte ?","Je paie par carte."]},
+      {who,say:L("Merci ! Bonne journée !","Thank you! Have a good day!"),...thanksBye()},
+    ];
+  }},
+{ id:"soir", fr:"Bonsoir !", en:"An evening drink for two", reg:"vous", lvl:"Evening greetings",
+  build(){
+    const who="Le serveur", drink=pick([L("deux verres de vin rouge","two glasses of red wine"),L("deux bières","two beers"),L("deux cafés","two espressos")]), pr=pick([L("dix euros","€10"),L("douze euros","€12")]);
+    const s=opener(who,"Bonsoir"); s[0].scene="7 p.m. You arrive at a café with a friend.";
+    s.splice(2,0,{who,say:L("Très bien, merci. Vous êtes combien ?","Very well, thanks. How many of you?"),task:"Say there are two of you",targets:["Nous sommes deux.","On est deux.","Deux, s'il vous plaît.","Pour deux, s'il vous plaît."]});
+    s[3].say=pick(ASK_ORDER); Object.assign(s[3],{scene:"He shows you to a table.",task:`Order ${drink.en}`,targets:orders(drink.fr)});
+    return [...s,
+      {who,say:null,scene:"Later. Raise a hand to get his attention.",task:"Ask for the bill",targets:["L'addition, s'il vous plaît.","S'il vous plaît, l'addition.","Excusez-moi, l'addition, s'il vous plaît."]},
+      {who,say:L(`Voilà, ${pr.fr}.`,`Here you go, ${pr.en}.`),task:"Say you'll pay by card",targets:["Par carte, s'il vous plaît.","Je peux payer par carte ?"]},
+      {who,say:L("Merci. Bonne soirée !","Thank you. Have a nice evening!"),...thanksBye(false)},
+    ];
+  }},
+{ id:"ami", fr:"Avec un ami", en:"Coffee with a friend (tu)", reg:"tu", lvl:"Casual hello",
+  build(){
+    const F="Léa", W="Le serveur", d=pick(DRINKS);
+    return [
+      {scene:"You meet your friend Léa at a café.",who:F,say:pick([L("Salut !","Hi!"),L("Coucou !","Hey!")]),task:"Say hi back",targets:["Salut !","Coucou !","Salut, Léa !"]},
+      {who:F,say:pick([L("Ça va ?","How are you?"),L("Comment ça va ?","How's it going?")]),task:"Say you're good, and ask her back (use toi)",targets:["Ça va, et toi ?","Ça va bien, et toi ?","Très bien, merci. Et toi ?","Bien, et toi ?"]},
+      {who:F,say:L("Ça va bien, merci. Tu prends quoi ?","Good, thanks. What are you having?"),task:`Say you're having ${d.en}`,targets:[`Je prends ${d.fr}.`,`${cap(d.fr)}.`,`Je vais prendre ${d.fr}.`,`Je voudrais ${d.fr}.`]},
+      {who:W,say:L("Bonjour ! Qu'est-ce que je vous sers ?","Hello! What can I get you?"),task:`Switch to vous: say hello and order an espresso and ${d.en}`,
+       targets:[`Bonjour ! Un café et ${d.fr}, s'il vous plaît.`,`Bonjour, un café et ${d.fr}, s'il vous plaît.`,`Bonjour, je voudrais un café et ${d.fr}, s'il vous plaît.`]},
+      {who:F,say:L("Merci ! C'est moi qui paie aujourd'hui.","Thanks! I'm paying today."),task:"Say thanks, that's kind",targets:["Merci, c'est gentil !","C'est gentil, merci !","Merci beaucoup !"]},
+    ];
+  }},
+];
+
+/* ---------- phrasebook ---------- */
+const BOOK=[
+  {h:"Hello",items:[["Bonjour","Hello. Say it first, every time.","any"],["Bonsoir","Good evening, from about 6 p.m.","any"],["Bonjour madame / monsieur","A little more polite.","vous"],["Salut","Hi, with friends.","tu"],["Coucou","Hey, with close friends.","tu"]]},
+  {h:"How are you?",items:[["Comment allez-vous ?","How are you? Polite.","vous"],["Vous allez bien ?","Are you well? Polite.","vous"],["Ça va ?","How's it going? Works almost anywhere.","any"],["Très bien, merci. Et vous ?","Very well, thanks. And you?","vous"],["Ça va bien, et toi ?","Good, and you?","tu"]]},
+  {h:"What the server asks",items:[["Qu'est-ce que je vous sers ?","What can I get you?","vous"],["Vous désirez ?","What would you like?","vous"],["Et avec ceci ?","Anything else with that?","vous"],["C'est tout ?","Is that all?","any"],["Sur place ou à emporter ?","For here or to go?","vous"],["Vous êtes combien ?","How many of you?","vous"]]},
+  {h:"Ordering",items:[["Je voudrais un café, s'il vous plaît.","I'd like a coffee, please. The safe choice.","vous"],["Un café, s'il vous plaît.","A coffee, please. Short and normal.","any"],["Je vais prendre un thé.","I'll have a tea.","any"],["Oui, c'est tout, merci.","Yes, that's all, thanks.","any"]]},
+  {h:"Paying and goodbye",items:[["L'addition, s'il vous plaît.","The bill, please.","vous"],["Je peux payer par carte ?","Can I pay by card?","vous"],["Voilà.","Here you go.","any"],["Merci, au revoir !","Thanks, goodbye!","any"],["Bonne journée !","Have a good day!","any"],["Bonne soirée !","Have a good evening!","any"]]},
+];
+
+/* ---------- pronunciation ---------- */
+const PH={bonjour:"bohn-ZHOOR",bonsoir:"bohn-SWAHR",madame:"mah-DAHM",monsieur:"muh-SYUH",je:"zhuh",voudrais:"voo-DRAY",vais:"vay",prendre:"PRAHN-druh",prends:"prahn",un:"uhn",une:"ün",cafe:"kah-FAY",creme:"krem",the:"tay",chocolat:"shoh-koh-LAH",chaud:"shoh",jus:"zhü",d:"d",orange:"oh-RAHNZH",sil:"seel",vous:"voo",plait:"pleh",et:"ay",croissant:"krwah-SAHN",pain:"pan",au:"oh",baguette:"bah-GET",baguettes:"bah-GET",deux:"duh",l:"l",addition:"ah-dee-SYOHN",merci:"mehr-SEE",beaucoup:"boh-KOO",voila:"vwah-LAH",tres:"tray",bien:"byan",ca:"sah",va:"vah",toi:"twah",salut:"sah-LÜ",coucou:"koo-KOO",cest:"say",oui:"wee",tout:"too",journee:"zhoor-NAY",soiree:"swah-RAY",bonne:"bun",revoir:"ruh-VWAHR",peux:"puh",payer:"pay-YAY",par:"par",carte:"kart",paie:"pay",nous:"noo",sommes:"sum",on:"ohn",est:"eh",pour:"poor",verres:"vehr",de:"duh",vin:"van",rouge:"roozh",bieres:"byehr",cafes:"kah-FAY",excusez:"ex-kü-ZAY",moi:"mwah",sur:"sür",place:"plahss",a:"ah",emporter:"ahn-por-TAY",aussi:"oh-SEE",tenez:"tuh-NAY",gentil:"zhahn-TEE",lea:"lay-AH",madame_:"",est_:"",bien_:""};
+const TIPS={bonjour:"Nasal \"on\": say \"bon\" without closing your lips on the n. The j is a soft \"zh\", as in measure.",bonsoir:"bohn-SWAHR: nasal first syllable, then \"swahr\" with a soft throat r.",madame:"mah-DAHM, both a's open.",monsieur:"Sounds like \"muh-SYUH\". The n and r are silent.",tres:"\"Tray\". The s is silent.",bien:"One quick syllable, \"byan\", nasal at the end.",merci:"Throat r, then \"see\": mehr-SEE, not \"mur-see\".",et:"\"Et\" is just \"ay\". The t is never pronounced.",vous:"\"Voo\", lips rounded and pushed forward. The s is silent.",voudrais:"voo-DRAY. Final s silent; the r is a light sound at the back of the throat.",prendre:"\"PRAHN-druh\", nasal an, tiny final uh.",prends:"\"Prahn\", nasal; d and s silent.",un:"Nasal \"uhn\"; don't land on a clear n.",une:"\"Ün\": the French u (say \"ee\" with tightly rounded lips) plus n.",cafe:"kah-FAY, stress the last syllable.",creme:"\"Krem\", one syllable.",sil:"s'il vous plaît runs together: seel-voo-PLEH.",plait:"\"Pleh\". The t is silent.",croissant:"krwah-SAHN. The t is silent and the end is nasal.",chocolat:"shoh-koh-LAH. The t is silent.",addition:"ah-dee-SYOHN, nasal end. Glue the l on: lah-dee-SYOHN.",voila:"vwah-LAH, stress the end.",bonne:"\"Bun\". Not nasal, because the n is doubled before e.",journee:"zhoor-NAY.",soiree:"swah-RAY.",revoir:"ruh-VWAHR. Keep the uh tiny.",ca:"\"Sah\". The cedilla makes c an s.",va:"\"Vah\".",toi:"\"Twah\".",salut:"sah-LÜ: French u, and the t is silent.",carte:"\"Kart\", throat r.",payer:"pay-YAY.",peux:"\"Puh\" with rounded lips.",sur:"\"Sür\": French u then r. Not \"sir\".",place:"\"Plahss\", one syllable.",emporter:"ahn-por-TAY, nasal start.",tout:"\"Too\". The t is silent.",cest:"\"Say\".",oui:"\"Wee\".",baguette:"bah-GET.",pain:"Nasal \"pan\". Don't say the n.",deux:"\"Duh\" with rounded lips. The x is silent.",the:"\"Tay\". The h is silent.",jus:"\"Zhü\": soft zh plus French u.",orange:"oh-RAHNZH, nasal middle.",chaud:"\"Shoh\". d silent.",sommes:"\"Sum\".",nous:"\"Noo\".",verres:"\"Vehr\". The -es is silent.",vin:"Nasal \"van\". Don't pronounce the n.",excusez:"ex-kü-ZAY.",beaucoup:"boh-KOO.",gentil:"zhahn-TEE. The l is silent.",coucou:"koo-KOO.",tenez:"tuh-NAY."};
+
+/* ---------- scoring ---------- */
+const FILLERS=new Set(["euh","heu","ben","bah","hum"]);
+function norm(s){
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/[’`´]/g,"'").replace(/\bs\s*'?\s*il\b/g,"sil").replace(/\bc\s*'?\s*est\b/g,"cest")
+    .replace(/\bsvp\b/g,"sil vous plait")
+    .replace(/'/g," ").replace(/[^a-z0-9\s-]/g," ").replace(/-/g," ")
+    .split(/\s+/).filter(w=>w&&!FILLERS.has(w));
+}
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
+function lcs(t,s){const m=t.length,n=s.length,d=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--)d[i][j]=t[i]===s[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+  const hit=new Array(m).fill(false);let i=0,j=0;while(i<m&&j<n){if(t[i]===s[j]){hit[i]=true;i++;j++;}else if(d[i+1][j]>=d[i][j+1])i++;else j++;}
+  return {count:d[0][0],hit};}
+function scoreOne(target,said){const t=norm(target),s=norm(said);if(!s.length)return{score:0,hit:t.map(()=>false),words:t};
+  const {count,hit}=lcs(t,s);const a=t.join(" "),b=s.join(" ");
+  return{score:.6*(count/Math.max(t.length,s.length))+.4*(1-lev(a,b)/Math.max(a.length,b.length)),hit,words:t};}
+function grade(step,cands){let best=null,heard=cands[0];for(const c of cands)for(const o of step.targets){const r=scoreOne(o,c);r.option=o;if(!best||r.score>best.score){best=r;heard=c;}}best.heard=heard;return best;}
+function phon(t){return norm(t).map(w=>PH[w]||w).join(" · ");}
+function tipsFor(best){const missed=[...new Set(best.words.filter((w,i)=>!best.hit[i]))];return missed.map(w=>TIPS[w]?`<li><b>${esc(w)}</b>: ${esc(TIPS[w])}</li>`:"").filter(Boolean).slice(0,4);}
+
+/* ---------- storage ---------- */
+function load(k,def){try{const v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+let level=load("ac-level",.85), showEn=load("ac-en",true), mode=load("ac-mode","talk"), BEST=load("ac-best2",{});
+const MAX_TRIES=3;
+
+/* ---------- speech out ---------- */
+let frVoice=null;
+function pickVoice(){if(!("speechSynthesis" in window))return;const vs=speechSynthesis.getVoices();frVoice=vs.find(v=>/^fr[-_]FR/i.test(v.lang))||vs.find(v=>/^fr/i.test(v.lang))||null;}
+if("speechSynthesis" in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
+function say(text,rate=.92,done){
+  let fired=false;const fin=()=>{if(fired)return;fired=true;clearTimeout(t);done&&done();};
+  const t=setTimeout(fin,Math.max(1600,text.split(/\s+/).length*520+900)/Math.min(rate,1));
+  if(!("speechSynthesis" in window)){fin();return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);u.lang="fr-FR";u.rate=rate;if(frVoice)u.voice=frVoice;
+  u.onend=()=>setTimeout(fin,250);u.onerror=fin;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- speech in ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let micOK=!!SR, rec=null, listening=false;
+function listenOnce({onResult,onSilence,onBlocked,onStart,onEnd}){
+  if(!micOK){onBlocked&&onBlocked();return;}
+  try{
+    rec=new SR();rec.lang="fr-FR";rec.interimResults=false;rec.maxAlternatives=4;
+    let got=false;
+    rec.onstart=()=>{listening=true;onStart&&onStart();};
+    rec.onresult=e=>{got=true;const alts=[...e.results[0]].map(a=>a.transcript.trim()).filter(Boolean);if(alts.length)onResult(alts);else onSilence&&onSilence();};
+    rec.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture"){micOK=false;got=true;onBlocked&&onBlocked();}else if(e.error==="no-speech"){got=true;onSilence&&onSilence();}else if(e.error!=="aborted"){got=true;onSilence&&onSilence();}};
+    rec.onend=()=>{listening=false;onEnd&&onEnd();if(!got)onSilence&&onSilence();};
+    rec.start();
+  }catch(err){micOK=false;onBlocked&&onBlocked();}
+}
+function stopListening(){if(rec){try{rec.onend=null;rec.onresult=null;rec.onerror=null;rec.abort();}catch(e){}}listening=false;}
+
+/* ---------- home ---------- */
+function renderMenu(){
+  const m=$("menu");m.innerHTML="";
+  SCENES.forEach(s=>{
+    const b=el("button","sc");b.type="button";const best=BEST[s.id];
+    b.innerHTML=`<span class="fr">${esc(s.fr)}</span><span class="en">${esc(s.en)}</span>
+      <div class="meta"><span class="tag ${s.reg==="tu"?"tu":""}">${s.reg==="tu"?"tu + vous":"vous"}</span><span class="tag">${esc(s.lvl)}</span>${best!=null?`<span class="tag best">Best ${best}% first try</span>`:""}</div>`;
+    b.onclick=()=>start(s);m.append(b);
+  });
+}
+function renderBook(){
+  const book=$("book");book.innerHTML="";
+  BOOK.forEach(g=>{
+    const box=el("div","group");box.append(el("h3",null,esc(g.h)));
+    g.items.forEach(([fr,en,reg])=>{
+      const r=el("div","ph");const b=el("button","say","▶");b.type="button";b.setAttribute("aria-label","Play "+fr);b.onclick=()=>say(fr);
+      r.append(b,el("span","f",esc(fr)+(reg!=="any"?`<span class="register">${reg}</span>`:"")),el("span","n",esc(en)));box.append(r);
+    });
+    book.append(box);
+  });
+}
+
+/* ---------- play state ---------- */
+let scene=null, steps=[], idx=0, tries=0, attempts=0, firstTry=0, running=false, silences=0, triesLog=[], introduced=-1;
+
+function start(s){
+  stopAll();
+  scene=s;steps=s.build();idx=0;tries=0;attempts=0;firstTry=0;running=false;silences=0;triesLog=[];introduced=-1;
+  $("home").hidden=true;$("play").hidden=false;
+  $("pEyebrow").textContent=s.en+" · "+(s.reg==="tu"?"tu + vous":"vous");
+  $("pTitle").textContent=s.fr;
+  $("thread").innerHTML="";
+  if(mode==="guided"){introduce(0,true);renderGuided();}else renderTalk("ready");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function stopAll(){running=false;stopListening();if("speechSynthesis" in window)speechSynthesis.cancel();}
+function goHome(){stopAll();$("play").hidden=true;$("home").hidden=false;renderMenu();window.scrollTo({top:0,behavior:"smooth"});}
+
+function introduce(i,speak){
+  if(introduced>=i)return;introduced=i;
+  const st=steps[i];if(!st)return;
+  if(st.scene)$("thread").append(el("div","scene",esc(st.scene)));
+  if(st.say){addNpc(st.who,st.say);if(speak)setTimeout(()=>say(st.say.fr),300);}
+}
+function addNpc(who,line){
+  const m=el("div","msg npc");const w=el("div","who");w.append(el("span",null,esc(who||"")));
+  const box=el("span");box.style.display="flex";box.style.gap="10px";
+  const r=el("button","mini","▶ Replay");r.type="button";r.onclick=()=>say(line.fr);
+  const sl=el("button","mini","🐢");sl.type="button";sl.setAttribute("aria-label","Replay slowly");sl.onclick=()=>say(line.fr,.6);
+  box.append(r,sl);w.append(box);
+  const en=el("div","en",esc(line.en));en.hidden=!showEn;
+  m.append(w,el("div","fr",esc(line.fr)),en);$("thread").append(m);m.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function addYou(text,pass){const m=el("div","msg you"+(pass?"":" fail"));m.append(el("div","who",pass?"Vous":"Vous · pas compris"),el("div","fr",esc(text||"(nothing)")));$("thread").append(m);}
+function renderProgress(){const p=$("progress");p.innerHTML="";steps.forEach((_,i)=>{const s=el("span");if(i<idx)s.className="done";else if(i===idx)s.className="now";p.append(s);});}
+function triesDots(){const t=el("div","tries");t.append(el("span",null,"Tries"));for(let i=0;i<MAX_TRIES;i++){const d=el("i");if(i<tries)d.className="used";t.append(d);}return t;}
+
+/* ---------- conversation (hands-free) mode ---------- */
+function renderTalk(state,extra){
+  renderProgress();const T=$("turn");T.innerHTML="";
+  if(idx>=steps.length)return renderDone();
+  const st=steps[idx];
+  const card=el("div","turn talk");
+  const big=el("button","big");big.type="button";big.id="bigBtn";
+  const status=el("div","status");status.setAttribute("aria-live","polite");
+  const goal=el("div","goal");
+  if(state==="ready"){big.textContent="Start";status.textContent="Tap Start. The server speaks, then it's your turn.";big.onclick=()=>{running=true;playStep();};}
+  else if(state==="speaking"){big.className="big speaking";big.textContent="…";status.textContent=(st.who||"")+" is speaking";big.onclick=pause;}
+  else if(state==="listening"){big.className="big listening";big.textContent="Stop";status.textContent="Your turn. Speak now.";big.onclick=pause;}
+  else if(state==="paused"){big.textContent="Resume";status.textContent=extra||"Paused.";big.onclick=()=>{running=true;silences=0;listenTurn();};}
+  else if(state==="typing"){big.textContent="↻";big.setAttribute("aria-label","Hear the line again");status.textContent="Your turn. Type or dictate your answer below.";big.onclick=()=>{if(st.say)say(st.say.fr);};}
+  card.append(big,status);
+  if(state!=="ready"){goal.textContent="Goal: "+st.task;card.append(goal,triesDots());}
+  if(state==="typing"||(!micOK&&state!=="ready")){
+    const form=el("form","answer");form.style.width="100%";
+    const inp=el("input");inp.id="answerInput";inp.type="text";inp.lang="fr";inp.autocomplete="off";inp.setAttribute("autocapitalize","off");inp.setAttribute("aria-label","Your answer");
+    inp.placeholder="Tap here, then use your keyboard's mic";
+    const chk=el("button","btn primary","Send");chk.type="submit";form.append(inp,chk);
+    form.addEventListener("submit",e=>{e.preventDefault();const v=inp.value.trim();if(v)handleAnswer([v]);});
+    card.append(form);
+    card.append(el("p","hint","The microphone is blocked in this view, so use your phone keyboard's dictation mic (set to French). Your answer is graded the same way."));
+    setTimeout(()=>inp.focus(),50);
+  }
+  if(extra&&state!=="paused")card.append(extra);
+  T.append(card);
+}
+function playStep(){
+  if(!running)return;
+  const st=steps[idx];
+  introduce(idx,false);
+  if(st.say){renderTalk("speaking");say(st.say.fr,.92,()=>{if(running)listenTurn();});}
+  else listenTurn();
+}
+function listenTurn(){
+  if(!running)return;
+  if(!micOK){renderTalk("typing");return;}
+  renderTalk("listening");
+  listenOnce({
+    onResult:alts=>handleAnswer(alts),
+    onSilence:()=>{if(!running)return;silences++;if(silences<2){listenTurn();}else{running=false;renderTalk("paused",null);$("turn").querySelector(".status").textContent="I didn't hear anything. Tap Resume when you're ready.";}},
+    onBlocked:()=>{renderTalk("typing");},
+  });
+}
+function pause(){running=false;stopListening();if("speechSynthesis" in window)speechSynthesis.cancel();renderTalk("paused","Paused. Tap Resume to answer.");}
+function handleAnswer(cands){
+  const st=steps[idx];const best=grade(st,cands);const pass=best.score>=level;
+  attempts++;silences=0;addYou(best.heard,pass);triesLog.push(best.heard);
+  if(pass){
+    if(tries===0)firstTry++;
+    tries=0;triesLog=[];idx++;
+    if(idx>=steps.length){running=false;renderDone();return;}
+    if(mode==="guided"){introduce(idx,true);renderGuided(feedbackEl(best,true));return;}
+    if(!running&&micOK){renderTalk("ready");return;}
+    running=true;setTimeout(playStep,350);
+    return;
+  }
+  tries++;
+  if(tries>=MAX_TRIES){running=false;stopListening();return mode==="guided"?renderGuided(stopCard(best)):showStop(best);}
+  if(mode==="guided"){renderGuided(feedbackEl(best,false));return;}
+  // Conversation: the server asks again
+  running=true;renderTalk("speaking");
+  const again="Pardon ?"+(st.say?" "+st.say.fr:"");
+  say(again,.85,()=>{if(running)listenTurn();});
+}
+function stopCard(best){
+  const st=steps[idx];
+  const c=el("div","stopcard");
+  c.append(el("strong",null,"Let's stop here for a moment."));
+  c.append(el("p","hint",`After ${MAX_TRIES} tries I still couldn't match your answer. For “${esc(st.task.toLowerCase())}”, I was listening for:`));
+  c.append(el("div","target",esc(st.targets[0])));
+  c.append(el("div","phon",esc(phon(st.targets[0]))));
+  if(st.targets.length>1)c.append(el("div","alts","These also work: "+st.targets.slice(1).map(a=>"<b>"+esc(a)+"</b>").join(" · ")));
+  c.append(el("div","hint","What I heard:"));
+  c.append(el("ol","said",triesLog.map(t=>"<li><i>"+esc(t)+"</i></li>").join("")));
+  const ws=el("div","words");best.words.forEach((w,i)=>ws.append(el("span","w "+(best.hit[i]?"hit":"miss"),esc(w))));c.append(ws);
+  const tips=tipsFor(best);if(tips.length)c.append(el("ul","tips",tips.join("")));
+  const row=el("div","row");
+  const h=el("button","btn","▶ Hear it");h.onclick=()=>say(st.targets[0]);
+  const s=el("button","btn","🐢 Slowly");s.onclick=()=>say(st.targets[0],.6);
+  const again=el("button","btn primary","Try this line again");again.onclick=()=>{tries=0;triesLog=[];if(mode==="guided")renderGuided();else{running=true;playStep();}};
+  const re=el("button","btn","Restart scene");re.onclick=()=>start(scene);
+  row.append(h,s,again,re);c.append(row);
+  return c;
+}
+function showStop(best){
+  renderProgress();const T=$("turn");T.innerHTML="";
+  const card=el("div","turn talk");card.append(stopCard(best));T.append(card);
+  T.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function renderDone(){
+  renderProgress();const T=$("turn");T.innerHTML="";
+  const pct=Math.round(firstTry/steps.length*100);
+  if(BEST[scene.id]==null||pct>BEST[scene.id]){BEST[scene.id]=pct;save("ac-best2",BEST);}
+  const c=el("div","turn done-card");
+  c.append(el("div","eyebrow","Scène terminée · Bravo !"),el("div","stat",`${firstTry}/${steps.length}`),el("p","hint",`lines understood on the first try · ${attempts} attempts in total`));
+  const r=el("div","row");r.style.justifyContent="center";
+  const a=el("button","btn primary","↻ Play again (new variation)");a.onclick=()=>start(scene);
+  const n=el("button","btn","🎲 Another scene");n.onclick=()=>start(pick(SCENES.filter(x=>x!==scene)));
+  const h=el("button","btn","← All scenes");h.onclick=goHome;
+  r.append(a,n,h);c.append(r);T.append(c);T.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ---------- guided mode ---------- */
+function feedbackEl(best,pass){
+  const f=el("div","feedback "+(pass?"ok":"bad"));
+  const v=el("div","verdict");
+  v.append(el("strong",null,pass?pick(["Compris !","Parfait !","Très bien !"]):"Pardon ? Pas compris."),el("span","score",`Match ${Math.round(best.score*100)}% · need ${Math.round(level*100)}%`));
+  f.append(v,el("div","hint","Heard: <i>"+esc(best.heard)+"</i>"));
+  const ws=el("div","words");best.words.forEach((w,i)=>ws.append(el("span","w "+(best.hit[i]?"hit":"miss"),esc(w))));f.append(ws);
+  if(!pass){const tips=tipsFor(best);if(tips.length)f.append(el("ul","tips",tips.join("")));f.append(el("p","hint",`Try ${tries+1} of ${MAX_TRIES}. Listen again, then say the line once more.`));}
+  return f;
+}
+function renderGuided(fb){
+  renderProgress();const T=$("turn");T.innerHTML="";
+  if(idx>=steps.length)return renderDone();
+  const st=steps[idx], model=st.targets[0];
+  const card=el("div","turn");
+  const cue=el("div","cue");cue.append(el("span","eyebrow",`Your line · ${idx+1} of ${steps.length}`),el("span","task",esc(st.task)));card.append(cue);
+  card.append(el("div","target",esc(model)),el("div","phon",esc(phon(model))));
+  if(st.targets.length>1)card.append(el("div","alts","Also accepted: "+st.targets.slice(1).map(a=>"<b>"+esc(a)+"</b>").join(" · ")));
+  card.append(triesDots());
+  const row=el("div","row");
+  const l1=el("button","btn","▶ Listen");l1.onclick=()=>say(model);
+  const l2=el("button","btn","🐢 Slowly");l2.onclick=()=>say(model,.6);
+  const mic=el("button","btn primary","🎙 Speak");mic.id="micBtn";
+  mic.onclick=()=>{
+    if(listening){stopListening();mic.className="btn primary";mic.textContent="🎙 Speak";return;}
+    listenOnce({onStart:()=>{mic.className="btn rec";mic.textContent="■ Stop";$("gHint").textContent="Listening… say your line.";},
+      onEnd:()=>{const b=$("micBtn");if(b){b.className="btn primary";b.textContent="🎙 Speak";}},
+      onResult:alts=>handleAnswer(alts),
+      onSilence:()=>{const h=$("gHint");if(h)h.textContent="I didn't hear anything. Tap Speak and try again.";},
+      onBlocked:()=>{const h=$("gHint");if(h)h.textContent="The microphone is blocked in this view. Tap the box and use your keyboard's dictation mic (set to French).";const i=$("answerInput");if(i)i.focus();}});
+  };
+  row.append(l1,l2,mic);card.append(row);
+  const form=el("form","answer");
+  const inp=el("input");inp.id="answerInput";inp.type="text";inp.lang="fr";inp.autocomplete="off";inp.setAttribute("autocapitalize","off");inp.setAttribute("aria-label","Your answer");
+  inp.placeholder="…or dictate here with your keyboard mic";
+  const chk=el("button","btn","Check");chk.type="submit";form.append(inp,chk);
+  form.addEventListener("submit",e=>{e.preventDefault();const v=inp.value.trim();if(v)handleAnswer([v]);});
+  card.append(form);
+  const hint=el("p","hint");hint.id="gHint";hint.textContent=micOK?"Tap Speak and say your line.":"Tap the box and use your keyboard's dictation mic, set to French.";card.append(hint);
+  if(fb)card.append(fb);
+  T.append(card);
+}
+
+/* ---------- controls ---------- */
+function syncMode(){
+  $("mTalk").setAttribute("aria-pressed",String(mode==="talk"));$("mGuide").setAttribute("aria-pressed",String(mode==="guided"));
+  $("modeHint").textContent=mode==="talk"
+    ?"Conversation: tap Start once. The server speaks, waits for your answer, and moves on when it understands. Three tries per line."
+    :"Guided: see each line in French with pronunciation, listen first, then speak. Three tries per line.";
+}
+function setMode(m){mode=m;save("ac-mode",m);syncMode();if(!$("play").hidden)start(scene);}
+$("mTalk").onclick=()=>setMode("talk");$("mGuide").onclick=()=>setMode("guided");
+document.querySelectorAll("#strict button").forEach(b=>{
+  b.setAttribute("aria-pressed",String(Math.abs(parseFloat(b.dataset.lv)-level)<.001));
+  b.onclick=()=>{level=parseFloat(b.dataset.lv);save("ac-level",level);document.querySelectorAll("#strict button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));};
+});
+$("tEn").setAttribute("aria-pressed",String(showEn));
+$("tEn").onclick=()=>{showEn=!showEn;save("ac-en",showEn);$("tEn").setAttribute("aria-pressed",String(showEn));document.querySelectorAll(".msg.npc .en").forEach(e=>e.hidden=!showEn);};
+$("surprise").onclick=()=>start(pick(SCENES));
+$("back").onclick=goHome;
+$("replay").onclick=()=>start(scene);
+$("copyPrompt").onclick=()=>{const t=$("voicePrompt").textContent,msg=$("copyMsg");
+  const sel=()=>{const r=document.createRange();r.selectNodeContents($("voicePrompt"));const s=getSelection();s.removeAllRanges();s.addRange(r);msg.textContent="Selected. Copy it from your menu.";};
+  try{navigator.clipboard.writeText(t).then(()=>msg.textContent="Copied.",sel);}catch(e){sel();}};
+
+syncMode();renderMenu();renderBook();
+</script>
+
+</body>
+</html>
