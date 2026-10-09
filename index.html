@@ -216,6 +216,8 @@ section{display:flex;flex-direction:column;gap:12px}
       <li><b>Je voudrais…</b> (I'd like) is the safe, polite way to order. <i>Je vais prendre…</i> and just <i>un café, s'il vous plaît</i> are also normal, and all are accepted.</li>
       <li><b>Un café</b> is a small espresso. <b>Un café crème</b> is coffee with steamed milk.</li>
       <li><b>The bill won't come on its own.</b> Ask: <i>l'addition, s'il vous plaît</i>.</li>
+      <li><b>Small talk stays small.</b> Staff may ask where you're from or comment on the weather; short, friendly answers are perfect. Brief replies from them aren't rude, especially in big cities. Skip money and politics.</li>
+      <li><b>Didn't catch it?</b> Say <i>Pardon ?</i> or <i>Vous pouvez répéter, s'il vous plaît ?</i> In the scenes this replays the line slowly and never costs a try. Don't over-apologize for your French.</li>
       <li>In a busy Paris café the server may skip "how are you" and go straight to your order. The scenes keep it in so you practise it.</li>
       <li>Films and TV are great for hearing real speed and slang, but their café scenes are usually too fast and too jokey for a first conversation. These scenes follow beginner course dialogues instead.</li>
     </ul>
@@ -243,6 +245,14 @@ section{display:flex;flex-direction:column;gap:12px}
       <li><a href="https://www.thelocal.fr/20200813/what-does-how-you-order-a-coffee-in-french-say-about-you/" target="_blank" rel="noopener">The Local: how you order a coffee in French</a></li>
       <li><a href="https://www.thelocal.fr/20240528/explained-restaurant-bill-etiquette-in-france" target="_blank" rel="noopener">The Local: bill etiquette in France</a></li>
       <li><a href="https://lingopie.com/blog/french-greetings/" target="_blank" rel="noopener">Lingopie: French greetings</a></li>
+      <li><a href="https://www.learnfrenchwithclemence.com/blog/how-to-respond-to-ca-va-without-just-saying-ca-va" target="_blank" rel="noopener">Learn French with Clémence: answering «ça va»</a></li>
+      <li><a href="https://www.fluentin3months.com/how-are-you-in-french/" target="_blank" rel="noopener">Fluent in 3 Months: ways to ask and answer «how are you»</a></li>
+      <li><a href="https://frenchmoments.eu/tu-vs-vous/" target="_blank" rel="noopener">French Moments: tu vs vous</a></li>
+      <li><a href="https://www.dummies.com/article/making-small-talk-in-french-201015" target="_blank" rel="noopener">Dummies: making small talk in French</a></li>
+      <li><a href="https://www.talkinfrench.com/making-small-talk-in-french/" target="_blank" rel="noopener">Talk in French: making small talk</a></li>
+      <li><a href="https://polyglottistlanguageacademy.com/language-culture-travelling-blog/2025/8/25/your-first-conversation-with-a-french-stranger-dos-and-donts" target="_blank" rel="noopener">Polyglottist: first conversation with a French stranger</a></li>
+      <li><a href="https://connexionfrance.com/magazine/eight-phrases-to-help-with-everyday-small-talk-in-france/669905" target="_blank" rel="noopener">Connexion: everyday small-talk phrases</a></li>
+      <li><a href="https://trykaiwa.com/blog/french-ordering-food-local" target="_blank" rel="noopener">Kaiwa: ordering food like a local</a></li>
       <li><a href="https://blog.duolingo.com/how-to-pronounce-french" target="_blank" rel="noopener">Duolingo: how to pronounce French</a></li>
       <li><a href="https://www.commeunefrancaise.com/blog/french-listening-practice-amelie" target="_blank" rel="noopener">Comme une Française: listening practice with Amélie</a></li>
     </ul>
@@ -263,7 +273,11 @@ const DRINKS=[L("un café","an espresso"),L("un café crème","a coffee with mil
 const PASTRIES=[L("un croissant","a croissant"),L("un pain au chocolat","a pain au chocolat")];
 const BREADS=[L("une baguette","a baguette"),L("deux baguettes","two baguettes")];
 const PRICES=[L("deux euros","€2"),L("trois euros","€3"),L("quatre euros","€4"),L("cinq euros","€5")];
-const orders=it=>[`Je voudrais ${it}, s'il vous plaît.`,`${cap(it)}, s'il vous plaît.`,`Je vais prendre ${it}, s'il vous plaît.`,`Je prends ${it}, s'il vous plaît.`];
+const orders=it=>[`Je voudrais ${it}, s'il vous plaît.`,`${cap(it)}, s'il vous plaît.`,`Je vais prendre ${it}, s'il vous plaît.`,`Je prends ${it}, s'il vous plaît.`,`Je vais vous prendre ${it}, s'il vous plaît.`,`Pour moi, ${it}, s'il vous plaît.`,`J'aimerais ${it}, s'il vous plaît.`];
+const COUNTRIES=[{fr:"du Canada",en:"Canada",alts:["Je suis canadien.","Je suis canadienne."]},{fr:"des États-Unis",en:"the United States",alts:["Je suis américain.","Je suis américaine."]},{fr:"d'Angleterre",en:"England",alts:["Je suis anglais.","Je suis anglaise."]},{fr:"d'Australie",en:"Australia",alts:["Je suis australien.","Je suis australienne."]}];
+const WEATHER=[{fr:"fait beau",en:"It's lovely",yes:"Oui, il fait très beau !"},{fr:"fait froid",en:"It's cold",yes:"Oui, il fait froid !"},{fr:"fait chaud",en:"It's hot",yes:"Oui, il fait chaud !"},{fr:"pleut",en:"It's raining",yes:"Oui, il pleut beaucoup !"}];
+/* Asking for a repeat never costs a try */
+const REPEAT=["Pardon ?","Vous pouvez répéter, s'il vous plaît ?","Pouvez-vous répéter, s'il vous plaît ?","Vous pouvez répéter ?","Je ne comprends pas.","Je n'ai pas compris.","Plus lentement, s'il vous plaît.","Répétez, s'il vous plaît.","Excusez-moi, je n'ai pas compris."];
 const ASK_ORDER=[L("Qu'est-ce que je vous sers ?","What can I get you?"),L("Vous désirez ?","What would you like?")];
 
 /* How-are-you answers. Core = fine with anyone. Casual = friends. */
@@ -365,6 +379,27 @@ const SCENES=[
       {who,say:L("Merci. Bonne soirée !","Thank you. Have a nice evening!"),...thanksBye(false)},
     ];
   }},
+{ id:"bavarder", fr:"Petite conversation", en:"Small talk with the server", reg:"vous", lvl:"Small talk",
+  build(){
+    const who=pick(["Le serveur","La serveuse"]), d=pick(DRINKS), c=pick(COUNTRIES), w=pick(WEATHER), hol=Math.random()<.6, pr=pick(PRICES);
+    const s=opener(who); Object.assign(s[2],{task:`Order ${d.en}`,targets:orders(d.fr)});
+    s[0].scene="A quiet afternoon. You order at the counter and the server is in a chatty mood.";
+    return [...s,
+      {who,say:pick([L("Vous êtes en vacances ?","Are you on holiday?"),L("Vous êtes ici en vacances ?","Are you here on holiday?")]),
+       task:hol?"Say yes, you're on holiday":"Say no, you're here for work",
+       targets:hol?["Oui, je suis en vacances.","Oui, en vacances.","Oui, je suis en vacances ici."]:["Non, je suis ici pour le travail.","Non, pour le travail.","Non, je travaille ici."]},
+      {who,say:pick([L("Vous venez d'où ?","Where are you from?"),L("Vous êtes d'où ?","Where are you from?")]),
+       task:`Say you're from ${c.en}`,targets:[`Je viens ${c.fr}.`,`Je suis ${c.fr}.`,`${cap(c.fr)}.`,...c.alts]},
+      {who,say:pick([L("Ah, super ! Et vous aimez Paris ?","Oh, great! And do you like Paris?"),L("Ah, c'est bien ! Ça vous plaît, Paris ?","Oh, nice! Are you enjoying Paris?")]),
+       task:"Say yes, you love it",targets:["Oui, j'adore !","Oui, j'aime beaucoup.","Oui, beaucoup !","Oui, c'est très beau.","Oui, ça me plaît beaucoup."]},
+      {who,say:L(`Il ${w.fr} aujourd'hui, hein ?`,`${w.en} today, eh?`),task:`Agree: "${w.en}!"`,
+       targets:[w.yes,`Oui, il ${w.fr} !`,`Ah oui, il ${w.fr} !`,"Oui, c'est vrai !"]},
+      {who,say:L(`Voilà votre ${d.fr.replace(/^une? /,"")} ! Ça fait ${pr.fr}.`,`Here's your drink! That's ${pr.en}.`),task:"Ask if you can pay by card",
+       targets:["Je peux payer par carte ?","Est-ce que je peux payer par carte ?","Par carte, s'il vous plaît."]},
+      {who,say:pick([L("Bien sûr. Bon séjour à Paris !","Of course. Enjoy your stay in Paris!"),L("Pas de souci. Bonne fin de séjour !","No problem. Enjoy the rest of your stay!")]),
+       task:"Say thank you, have a good day",targets:["Merci, bonne journée !","Merci beaucoup, bonne journée !","Merci, au revoir !","Merci, vous aussi !"]},
+    ];
+  }},
 { id:"ami", fr:"Avec un ami", en:"Coffee with a friend (tu)", reg:"tu", lvl:"Casual hello",
   build(){
     const F="Léa", W="Le serveur", d=pick(DRINKS);
@@ -386,6 +421,8 @@ const BOOK=[
   {h:"How are you?",items:[["Comment allez-vous ?","How are you? Polite.","vous"],["Vous allez bien ?","Are you well? Polite.","vous"],["Ça va ?","How's it going? Works almost anywhere.","any"],["Très bien, merci. Et vous ?","Very well, thanks. And you?","vous"],["Ça va bien, et toi ?","Good, and you?","tu"],["Pas mal, et vous ?","Not bad, and you?","any"],["Super !","Great!","any"],["Tranquille, et toi ?","Chill, you? Friends only.","tu"],["Nickel !","Perfect! Friends only.","tu"],["Ça roule !","All good! Friends only.","tu"]]},
   {h:"What the server asks",items:[["Qu'est-ce que je vous sers ?","What can I get you?","vous"],["Vous désirez ?","What would you like?","vous"],["Et avec ceci ?","Anything else with that?","vous"],["C'est tout ?","Is that all?","any"],["Sur place ou à emporter ?","For here or to go?","vous"],["Vous êtes combien ?","How many of you?","vous"]]},
   {h:"Ordering",items:[["Je voudrais un café, s'il vous plaît.","I'd like a coffee, please. The safe choice.","vous"],["Un café, s'il vous plaît.","A coffee, please. Short and normal.","any"],["Je vais prendre un thé.","I'll have a tea.","any"],["Oui, c'est tout, merci.","Yes, that's all, thanks.","any"]]},
+  {h:"Small talk with staff",items:[["Vous êtes en vacances ?","Are you on holiday?","vous"],["Oui, je suis en vacances.","Yes, I'm on holiday.","any"],["Vous venez d'où ?","Where are you from?","vous"],["Je viens du Canada / des États-Unis / d'Angleterre.","I'm from Canada / the US / England.","any"],["Vous aimez Paris ?","Do you like Paris?","vous"],["Oui, j'adore !","Yes, I love it!","any"],["Il fait beau aujourd'hui !","It's lovely today!","any"],["Bon séjour !","Enjoy your stay!","any"]]},
+  {h:"If you don't understand",items:[["Pardon ?","Sorry? (asks them to repeat)","any"],["Vous pouvez répéter, s'il vous plaît ?","Can you repeat, please?","vous"],["Plus lentement, s'il vous plaît.","More slowly, please.","vous"],["Je ne comprends pas.","I don't understand.","any"],["Je suis en train d'apprendre le français.","I'm learning French.","any"]]},
   {h:"Paying and goodbye",items:[["L'addition, s'il vous plaît.","The bill, please.","vous"],["Je peux payer par carte ?","Can I pay by card?","vous"],["Voilà.","Here you go.","any"],["Merci, au revoir !","Thanks, goodbye!","any"],["Bonne journée !","Have a good day!","any"],["Bonne soirée !","Have a good evening!","any"]]},
 ];
 
@@ -565,7 +602,15 @@ function listenTurn(){
 }
 function pause(){running=false;stopListening();if("speechSynthesis" in window)speechSynthesis.cancel();renderTalk("paused","Paused. Tap Resume to answer.");}
 function handleAnswer(cands){
-  const st=steps[idx];const best=grade(st,cands);const pass=best.score>=level;
+  const st=steps[idx];
+  const rep=bestOf(REPEAT,cands);
+  if(rep.score>=.85&&st.say){
+    addYou(rep.heard,true);
+    $("thread").append(el("div","tipnote","💡 Bien sûr ! Asking for a repeat is a great habit. Listen again, more slowly. This didn't use a try."));
+    if(mode==="guided"){say(st.say.fr,.7);return;}
+    running=true;renderTalk("speaking");say(st.say.fr,.7,()=>{if(running)listenTurn();});return;
+  }
+  const best=grade(st,cands);const pass=best.score>=level;
   attempts++;silences=0;addYou(best.heard,pass);triesLog.push(best.heard);
   if(pass&&best.note)$("thread").append(el("div","tipnote","💡 "+esc(best.note)));
   if(pass){
