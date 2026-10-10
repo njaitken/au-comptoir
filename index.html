@@ -225,7 +225,7 @@ section{display:flex;flex-direction:column;gap:12px}
       <li><b>At a restaurant, ask for «la carte»</b> to see the menu. «Le menu» means the fixed-price set meal. Tap water is free: ask for <i>une carafe d'eau</i>. The host usually skips "how are you" and goes straight to <i>Vous avez réservé ?</i></li>
       <li><b>The bill won't come on its own.</b> Ask: <i>l'addition, s'il vous plaît</i>.</li>
       <li><b>Small talk stays small.</b> Staff may ask where you're from or comment on the weather; short, friendly answers are perfect. Brief replies from them aren't rude, especially in big cities. Skip money and politics.</li>
-      <li><b>Didn't catch it?</b> Say <i>Pardon ?</i> or <i>Vous pouvez répéter, s'il vous plaît ?</i> In the scenes this replays the line slowly and never costs a try. Don't over-apologize for your French.</li>
+      <li><b>Didn't catch it?</b> Just say so, in French, out loud. <i>Pardon ?</i>, <i>Comment ?</i>, <i>Vous pouvez répéter ?</i> or <i>Encore une fois</i> get the line repeated. <i>Plus lentement</i>, <i>Je ne comprends pas</i> or <i>Je n'ai pas compris</i> get it repeated slowly. <i>Je ne sais pas</i> shows what to say. None of these cost a try, and polite words are optional. Don't over-apologize for your French.</li>
       <li>In a busy Paris café the server may skip "how are you" and go straight to your order. The scenes keep it in so you practise it.</li>
       <li>Films and TV are great for hearing real speed and slang, but their café scenes are usually too fast and too jokey for a first conversation. These scenes follow beginner course dialogues instead.</li>
     </ul>
@@ -289,7 +289,10 @@ const orders=it=>[`Je voudrais ${it}, s'il vous plaît.`,`${cap(it)}, s'il vous 
 const COUNTRIES=[{fr:"du Canada",en:"Canada",alts:["Je suis canadien.","Je suis canadienne."]},{fr:"des États-Unis",en:"the United States",alts:["Je suis américain.","Je suis américaine."]},{fr:"d'Angleterre",en:"England",alts:["Je suis anglais.","Je suis anglaise."]},{fr:"d'Australie",en:"Australia",alts:["Je suis australien.","Je suis australienne."]}];
 const WEATHER=[{fr:"fait beau",en:"It's lovely",yes:"Oui, il fait très beau !"},{fr:"fait froid",en:"It's cold",yes:"Oui, il fait froid !"},{fr:"fait chaud",en:"It's hot",yes:"Oui, il fait chaud !"},{fr:"pleut",en:"It's raining",yes:"Oui, il pleut beaucoup !"}];
 /* Asking for a repeat never costs a try */
-const REPEAT=["Pardon ?","Vous pouvez répéter, s'il vous plaît ?","Pouvez-vous répéter, s'il vous plaît ?","Vous pouvez répéter ?","Je ne comprends pas.","Je n'ai pas compris.","Plus lentement, s'il vous plaît.","Répétez, s'il vous plaît.","Excusez-moi, je n'ai pas compris."];
+/* Same speed: just say it again */
+const REPEAT=["Pardon ?","Comment ?","Vous pouvez répéter, s'il vous plaît ?","Pouvez-vous répéter, s'il vous plaît ?","Vous pouvez répéter ?","Répétez, s'il vous plaît.","Encore une fois, s'il vous plaît.","Tu peux répéter ?"];
+/* Slower: I didn't understand / please speak slowly */
+const SLOWER=["Je ne comprends pas.","Je comprends pas.","Je n'ai pas compris.","J'ai pas compris.","Excusez-moi, je n'ai pas compris.","Plus lentement, s'il vous plaît.","Parlez plus lentement, s'il vous plaît.","Vous pouvez parler plus lentement ?","Pouvez-vous parler plus lentement, s'il vous plaît ?","Lentement, s'il vous plaît.","Vous pouvez répéter plus lentement ?","Pouvez-vous répéter plus lentement, s'il vous plaît ?","Tu peux parler plus lentement ?"];
 const ASK_ORDER=[L("Qu'est-ce que je vous sers ?","What can I get you?"),L("Vous désirez ?","What would you like?")];
 
 /* How-are-you answers. Core = fine with anyone. Casual = friends. */
@@ -474,7 +477,7 @@ const BOOK=[
   {h:"What the server asks",items:[["Qu'est-ce que je vous sers ?","What can I get you?","vous"],["Vous désirez ?","What would you like?","vous"],["Et avec ceci ?","Anything else with that?","vous"],["C'est tout ?","Is that all?","any"],["Sur place ou à emporter ?","For here or to go?","vous"],["Vous êtes combien ?","How many of you?","vous"]]},
   {h:"Ordering",items:[["Je voudrais un café, s'il vous plaît.","I'd like a coffee, please. The safe choice.","vous"],["Un café, s'il vous plaît.","A coffee, please. Short and normal.","any"],["Je vais prendre un thé.","I'll have a tea.","any"],["Oui, c'est tout, merci.","Yes, that's all, thanks.","any"]]},
   {h:"Small talk with staff",items:[["Vous êtes en vacances ?","Are you on holiday?","vous"],["Oui, je suis en vacances.","Yes, I'm on holiday.","any"],["Vous venez d'où ?","Where are you from?","vous"],["Je viens du Canada / des États-Unis / d'Angleterre.","I'm from Canada / the US / England.","any"],["Vous aimez Paris ?","Do you like Paris?","vous"],["Oui, j'adore !","Yes, I love it!","any"],["Il fait beau aujourd'hui !","It's lovely today!","any"],["Bon séjour !","Enjoy your stay!","any"]]},
-  {h:"If you don't understand",items:[["Pardon ?","Sorry? (asks them to repeat)","any"],["Vous pouvez répéter, s'il vous plaît ?","Can you repeat, please?","vous"],["Plus lentement, s'il vous plaît.","More slowly, please.","vous"],["Je ne comprends pas.","I don't understand.","any"],["Je suis en train d'apprendre le français.","I'm learning French.","any"]]},
+  {h:"If you don't understand (say these in any scene)",items:[["Pardon ?","Sorry? They repeat the line.","any"],["Vous pouvez répéter, s'il vous plaît ?","Can you repeat, please? They repeat the line.","vous"],["Encore une fois, s'il vous plaît.","One more time, please. They repeat the line.","any"],["Plus lentement, s'il vous plaît.","More slowly, please. They repeat it slowly.","vous"],["Vous pouvez parler plus lentement ?","Can you speak more slowly? They repeat it slowly.","vous"],["Je ne comprends pas.","I don't understand. They repeat it slowly.","any"],["Je n'ai pas compris.","I didn't catch that. They repeat it slowly.","any"],["Je ne sais pas.","I don't know. Shows you what to say.","any"],["Je suis en train d'apprendre le français.","I'm learning French.","any"]]},
   {h:"At a restaurant table",items:[["Vous avez réservé ?","Do you have a reservation?","vous"],["Oui, j'ai réservé au nom de Martin.","Yes, I booked under the name Martin.","any"],["Une table pour deux, s'il vous plaît.","A table for two, please.","any"],["En terrasse ou à l'intérieur ?","Terrace or inside?","vous"],["Une carafe d'eau, s'il vous plaît.","A jug of tap water, please. It's free.","vous"],["Vous avez choisi ?","Have you decided?","vous"],["Pas encore, une minute, s'il vous plaît.","Not yet, one minute please.","vous"],["Qu'est-ce que vous me conseillez ?","What do you recommend?","vous"],["Quel est le plat du jour ?","What's the dish of the day?","any"],["Et pour la cuisson ?","How would you like it cooked?","vous"],["Saignant / à point / bien cuit","Rare / medium / well done","any"],["Et comme boisson ?","And to drink?","vous"],["C'est délicieux !","It's delicious!","any"],["C'était délicieux, merci.","It was delicious, thank you.","any"]]},
   {h:"Paying and goodbye",items:[["L'addition, s'il vous plaît.","The bill, please.","vous"],["Je peux payer par carte ?","Can I pay by card?","vous"],["Voilà.","Here you go.","any"],["Merci, au revoir !","Thanks, goodbye!","any"],["Bonne journée !","Have a good day!","any"],["Bonne soirée !","Have a good evening!","any"]]},
 ];
@@ -510,6 +513,11 @@ function stripPolite(tok){const out=[],gone=[];for(let i=0;i<tok.length;){let m=
   if(m){gone.push(m.join(" "));i+=m.length;}else{out.push(tok[i]);i++;}}return{out,gone};}
 const POLITE_FR={"sil vous plait":"s'il vous plaît","merci beaucoup":"merci beaucoup","merci":"merci","madame":"madame","monsieur":"monsieur","bonjour":"bonjour","bonsoir":"bonsoir","excusez moi":"excusez-moi"};
 function bestOf(list,cands){let best=null;for(const c of cands)for(const o of list){const r=scoreOne(o.t||o,c);r.option=o.t||o;r.note=o.note||null;r.heard=c;if(!best||r.score>best.score)best=r;}return best;}
+/* Helper phrases match with or without polite words («encore une fois» = «encore une fois, s'il vous plaît») */
+function helperOf(list,cands){let best=bestOf(list,cands);
+  for(const c of cands){const s=stripPolite(norm(c)).out;for(const o of list){const t=stripPolite(norm(o)).out;if(!t.length||!s.length)continue;
+    const r=scoreTok(t,s);if(r.score>best.score){best={...r,heard:c,option:o};}}}
+  return best;}
 /* Full targets win when they pass; otherwise an understandable-but-off-register answer passes with a tip. */
 function grade(step,cands){
   // Names are hard for speech recognition: whatever word follows "nom de" counts as the name
@@ -644,7 +652,7 @@ function renderTalk(state,extra){
   else if(state==="typing"){big.textContent="↻";big.setAttribute("aria-label","Hear the line again");status.textContent="Your turn. Type or dictate your answer below.";big.onclick=()=>{if(st.say)say(st.say.fr);};}
   card.append(big,status);
   if(state!=="ready"){goal.textContent="Goal: "+st.task;card.append(goal,triesDots(),dontKnowBtn());
-    card.append(el("p","hint","Stuck? Tap “I don't know” or say «Je ne sais pas». It won't use a try."));}
+    card.append(el("p","hint","Say «Pardon ?» to hear it again, «Plus lentement» or «Je ne comprends pas» to hear it slowly, or «Je ne sais pas» for help. None of these use a try."));}
   if(state==="typing"||(!micOK&&state!=="ready")){
     const form=el("form","answer");form.style.width="100%";
     const inp=el("input");inp.id="answerInput";inp.type="text";inp.lang="fr";inp.autocomplete="off";inp.setAttribute("autocapitalize","off");inp.setAttribute("aria-label","Your answer");
@@ -678,13 +686,24 @@ function listenTurn(){
 function pause(){running=false;stopListening();if("speechSynthesis" in window)speechSynthesis.cancel();renderTalk("paused","Paused. Tap Resume to answer.");}
 function handleAnswer(cands){
   const st=steps[idx];
-  if(bestOf(DONTKNOW,cands).score>=.85){addYou(cands[0],true);showHelp();return;}
-  const rep=bestOf(REPEAT,cands);
-  if(rep.score>=.85&&st.say){
-    addYou(rep.heard,true);
-    $("thread").append(el("div","tipnote","💡 Bien sûr ! Asking for a repeat is a great habit. Listen again, more slowly. This didn't use a try."));
-    if(mode==="guided"){say(st.say.fr,.7);return;}
-    running=true;renderTalk("speaking");say(st.say.fr,.7,()=>{if(running)listenTurn();});return;
+  // Conversation helpers: pick whichever phrase list matches best
+  const dk=helperOf(DONTKNOW,cands), rep=helperOf(REPEAT,cands), slow=helperOf(SLOWER,cands);
+  const top=[["dk",dk],["rep",rep],["slow",slow]].sort((a,b)=>b[1].score-a[1].score)[0];
+  if(top[1].score>=.85){
+    if(top[0]==="dk"){addYou(top[1].heard,true);showHelp();return;}
+    const st2=steps[idx];
+    const line=st2.say?st2.say.fr:null;
+    addYou(top[1].heard,true);
+    const isSlow=top[0]==="slow";
+    if(!line){$("thread").append(el("div","tipnote","💡 No one has spoken yet on this line. It's your turn to start. Tap “I don't know” if you need help. This didn't use a try."));
+      if(mode!=="guided"){running=true;listenTurn();}return;}
+    const reply=isSlow?pick(["D'accord, plus lentement.","Pas de problème, je répète doucement.","Bien sûr. Alors…"]):pick(["Bien sûr.","Oui, je répète.","Pas de souci."]);
+    const msg=isSlow?"💡 Good move. They'll say it again, more slowly. This didn't use a try.":"💡 Good move. They'll say it again. This didn't use a try.";
+    $("thread").append(el("div","tipnote",msg));
+    if(mode==="guided"){say(reply+" "+line,isSlow?.65:.92);return;}
+    running=true;renderTalk("speaking");
+    say(reply,.92,()=>{if(!running)return;say(line,isSlow?.65:.92,()=>{if(running)listenTurn();});});
+    return;
   }
   const best=grade(st,cands);const pass=best.score>=level;
   attempts++;silences=0;addYou(best.heard,pass);triesLog.push(best.heard);
