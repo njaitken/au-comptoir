@@ -217,6 +217,7 @@ section{display:flex;flex-direction:column;gap:12px}
     <h2>Good to know</h2>
     <ul class="notes">
       <li><b>Bonjour comes first,</b> every time, before you ask for anything. After about 6 p.m. it becomes <i>bonsoir</i>.</li>
+      <li><b>«Ça va ?» isn't really a question.</b> Like "how's it going?" in English, it's part of the greeting. The normal answer is just <i>Ça va</i>, often bounced back: <i>Ça va, et vous ?</i> Save real answers for friends.</li>
       <li><b>Vous with staff, tu with friends.</b> The scene with a friend shows the switch.</li>
       <li><b>Je voudrais…</b> (I'd like) is the safe, polite way to order. <i>Je vais prendre…</i> and just <i>un café, s'il vous plaît</i> are also normal, and all are accepted.</li>
       <li><b>Un café</b> is a small espresso; <i>un espresso</i> and <i>un express</i> mean the same and are accepted. <b>Un café crème</b> (or just <i>un crème</i>) is coffee with steamed milk.</li>
@@ -301,24 +302,30 @@ const NOTE_SLANG="Understood! «Nickel», «tranquille» and «ça roule» are f
 const NOTE_ASKBACK="Understood! Next time, ask back too: add «et vous ?» (or «et toi ?» with a friend).";
 const NOTE_SALUT="Understood! «Salut» and «coucou» are for friends. With staff, start with «bonjour».";
 const NOTE_BONJOUR="Understood! With a friend, «salut» or «coucou» is more natural, but «bonjour» is fine.";
-function howVous(){return{targets:withBack(HOW_CORE,"vous"),soft:[
+/* «Ça va ?» is a ritual, like "how's it going?": the usual answer is just «Ça va», often bounced back. */
+const CAVA_PLAIN=["Ça va.","Ça va, merci.","Oui, ça va.","Ça va bien.","Ça va bien, merci.","Oui, ça va, merci."];
+function howVous(cava){const base=withBack(HOW_CORE,"vous");
+  const targets=cava?["Ça va, et vous ?",...base.filter(t=>t!=="Ça va. Et vous ?"),...CAVA_PLAIN]:base;
+  return{targets,soft:[
   ...withBack(HOW_CORE,"toi").map(t=>({t,note:NOTE_TOI})),
   ...withBack(HOW_CASUAL,"vous").concat(withBack(HOW_CASUAL,"toi")).map(t=>({t,note:NOTE_SLANG})),
   ...HOW_CORE.map(t=>({t:t+".",note:NOTE_ASKBACK}))]};}
-function howTu(){const all=HOW_CORE.concat(HOW_CASUAL);return{targets:withBack(all,"toi"),soft:[
+function howTu(){const all=HOW_CORE.concat(HOW_CASUAL);return{targets:["Ça va, et toi ?",...withBack(all,"toi").filter(t=>t!=="Ça va. Et toi ?"),...CAVA_PLAIN,"Ouais, ça va."],soft:[
   ...withBack(all,"vous").map(t=>({t,note:NOTE_VOUS})),
   ...all.map(t=>({t:t+".",note:NOTE_ASKBACK}))]};}
 
 /* The opener every vous-scene shares: hello, how are you, what can I get you */
 function opener(who,g="Bonjour"){
   const hi=g==="Bonjour"?"Hello":"Good evening";
-  const how=pick([L("Comment allez-vous ?","How are you?"),L("Vous allez bien ?","Are you well?"),L("Ça va ?","How are you?")]);
+  // «Ça va ?» is by far the most common, so it comes up most of the time
+  const cava=Math.random()<.65;
+  const how=cava?L("Ça va ?","How's it going?"):pick([L("Comment allez-vous ?","How are you?"),L("Vous allez bien ?","Are you well?")]);
   const ask=pick(ASK_ORDER);
   return [
     {who,say:L(`${g} !`,`${hi}!`),task:"Say hello back",targets:[`${g} !`,`${g}, madame !`,`${g}, monsieur !`,`${g} à vous !`],
      soft:["Salut !","Coucou !"].map(t=>({t,note:NOTE_SALUT}))},
-    {who,say:how,task:"Say you're good, and ask how they are",...howVous()},
-    {who,say:L(`Très bien, merci. ${ask.fr}`,`Very well, thanks. ${ask.en}`),order:true},
+    {who,say:how,task:cava?"Say «ça va» back (it's a greeting, not a real question)":"Say you're good, and ask how they are",...howVous(cava)},
+    {who,say:cava?L(`Ça va, merci. ${ask.fr}`,`Good, thanks. ${ask.en}`):L(`Très bien, merci. ${ask.fr}`,`Very well, thanks. ${ask.en}`),order:true},
   ];
 }
 const thanksBye=(day=true)=>({task:"Say thanks and goodbye",targets:day?["Merci, au revoir !","Merci, bonne journée !","Au revoir, bonne journée !","Merci, vous aussi. Au revoir !"]:["Merci, bonne soirée !","Merci, au revoir !","Au revoir, bonne soirée !","Merci, vous aussi. Au revoir !"]});
@@ -451,7 +458,7 @@ const SCENES=[
     return [
       {scene:"You meet your friend Léa at a café.",who:F,say:pick([L("Salut !","Hi!"),L("Coucou !","Hey!")]),task:"Say hi back",targets:["Salut !","Coucou !","Salut, Léa !","Coucou, Léa !","Salut, ça va ?"],
        soft:["Bonjour !","Bonjour, Léa !"].map(t=>({t,note:NOTE_BONJOUR}))},
-      {who:F,say:pick([L("Ça va ?","How are you?"),L("Comment ça va ?","How's it going?"),L("Ça va bien ?","Doing well?")]),task:"Say you're good, and ask her back",...howTu()},
+      {who:F,say:pick([L("Ça va ?","How's it going?"),L("Ça va ?","How's it going?"),L("Comment ça va ?","How's it going?")]),task:"Say «ça va» and bounce it back",...howTu()},
       {who:F,say:L("Ça va bien, merci. Tu prends quoi ?","Good, thanks. What are you having?"),task:`Say you're having ${d.en}`,targets:[`Je prends ${d.fr}.`,`${cap(d.fr)}.`,`Je vais prendre ${d.fr}.`,`Je voudrais ${d.fr}.`]},
       {who:W,say:L("Bonjour ! Qu'est-ce que je vous sers ?","Hello! What can I get you?"),task:`Switch to vous: say hello and order an espresso and ${d.en}`,
        targets:[`Bonjour ! Un café et ${d.fr}, s'il vous plaît.`,`Bonjour, un café et ${d.fr}, s'il vous plaît.`,`Bonjour, je voudrais un café et ${d.fr}, s'il vous plaît.`]},
@@ -463,7 +470,7 @@ const SCENES=[
 /* ---------- phrasebook ---------- */
 const BOOK=[
   {h:"Hello",items:[["Bonjour","Hello. Say it first, every time.","any"],["Bonsoir","Good evening, from about 6 p.m.","any"],["Bonjour madame / monsieur","A little more polite.","vous"],["Salut","Hi, with friends.","tu"],["Coucou","Hey, with close friends.","tu"]]},
-  {h:"How are you?",items:[["Comment allez-vous ?","How are you? Polite.","vous"],["Vous allez bien ?","Are you well? Polite.","vous"],["Ça va ?","How's it going? Works almost anywhere.","any"],["Très bien, merci. Et vous ?","Very well, thanks. And you?","vous"],["Ça va bien, et toi ?","Good, and you?","tu"],["Pas mal, et vous ?","Not bad, and you?","any"],["Super !","Great!","any"],["Tranquille, et toi ?","Chill, you? Friends only.","tu"],["Nickel !","Perfect! Friends only.","tu"],["Ça roule !","All good! Friends only.","tu"]]},
+  {h:"How are you?",items:[["Ça va ?","How's it going? The everyday greeting, not a real question.","any"],["Ça va, et vous ?","The usual answer: fine, and you?","vous"],["Ça va.","Just «ça va» back is perfectly normal.","any"],["Comment allez-vous ?","How are you? More formal.","vous"],["Vous allez bien ?","Are you well? Polite.","vous"],["Très bien, merci. Et vous ?","Very well, thanks. And you?","vous"],["Ça va bien, et toi ?","Good, and you?","tu"],["Pas mal, et vous ?","Not bad, and you?","any"],["Super !","Great!","any"],["Tranquille, et toi ?","Chill, you? Friends only.","tu"],["Nickel !","Perfect! Friends only.","tu"],["Ça roule !","All good! Friends only.","tu"]]},
   {h:"What the server asks",items:[["Qu'est-ce que je vous sers ?","What can I get you?","vous"],["Vous désirez ?","What would you like?","vous"],["Et avec ceci ?","Anything else with that?","vous"],["C'est tout ?","Is that all?","any"],["Sur place ou à emporter ?","For here or to go?","vous"],["Vous êtes combien ?","How many of you?","vous"]]},
   {h:"Ordering",items:[["Je voudrais un café, s'il vous plaît.","I'd like a coffee, please. The safe choice.","vous"],["Un café, s'il vous plaît.","A coffee, please. Short and normal.","any"],["Je vais prendre un thé.","I'll have a tea.","any"],["Oui, c'est tout, merci.","Yes, that's all, thanks.","any"]]},
   {h:"Small talk with staff",items:[["Vous êtes en vacances ?","Are you on holiday?","vous"],["Oui, je suis en vacances.","Yes, I'm on holiday.","any"],["Vous venez d'où ?","Where are you from?","vous"],["Je viens du Canada / des États-Unis / d'Angleterre.","I'm from Canada / the US / England.","any"],["Vous aimez Paris ?","Do you like Paris?","vous"],["Oui, j'adore !","Yes, I love it!","any"],["Il fait beau aujourd'hui !","It's lovely today!","any"],["Bon séjour !","Enjoy your stay!","any"]]},
